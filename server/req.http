@@ -1,0 +1,125 @@
+@baseUrl = http://localhost:5000
+@token = eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MzAwMDEsImVtYWlsIjoibmV0ZmxpeEBnbWFpbC5jb20iLCJpYXQiOjE3NzQyODg4NDIsImV4cCI6MTc3NDM3NTI0Mn0.SjXCZbcjUbRlFh43UAObPt_qKXlMM8zYBGw5p69uSnM
+
+
+### =========================
+### 1. REGISTER ROOT USER
+### =========================
+POST {{baseUrl}}/api/users/register
+Content-Type: application/json
+
+{
+  "name": "Netflix",
+  "email": "netflix@gmail.com",
+  "password": "root1234"
+}
+
+
+### =========================
+### 2. LOGIN ROOT USER
+### =========================
+POST {{baseUrl}}/api/users/login
+Content-Type: application/json
+
+{
+  "email": "netflix@gmail.com",
+  "password": "root1234"
+}
+
+# 👉 Copy token from response and replace in @token above
+
+
+### =========================
+### 3. CREATE ROLES
+### =========================
+
+### Product Manager
+POST {{baseUrl}}/api/users/create-role
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "email": "netflix@gmail.com",
+  "role": "product_manager",
+  "passkey": "prod@123"
+}
+
+
+### Sales Manager
+POST {{baseUrl}}/api/users/create-role
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "email": "netflix@gmail.com",
+  "role": "sales_manager",
+  "passkey": "sales@123"
+}
+
+
+### Customer Success Manager
+POST {{baseUrl}}/api/users/create-role
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "email": "netflix@gmail.com",
+  "role": "customer_success_manager",
+  "passkey": "csm@123"
+}
+
+
+### Sales Rep
+POST {{baseUrl}}/api/users/create-role
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "email": "netflix@gmail.com",
+  "role": "sales_rep",
+  "passkey": "rep@123"
+}
+
+
+### =========================
+### 4. ROLE LOGIN TESTS
+### =========================
+
+### Product Manager Login
+POST {{baseUrl}}/api/users/role-login
+Content-Type: application/json
+
+{
+  "email": "netflix@gmail.com",
+  "passkey": "prod@123"
+}
+
+
+### Sales Manager Login
+POST {{baseUrl}}/api/users/role-login
+Content-Type: application/json
+
+{
+  "email": "netflix@gmail.com",
+  "passkey": "sales@123"
+}
+
+
+### Customer Success Manager Login
+POST {{baseUrl}}/api/users/role-login
+Content-Type: application/json
+
+{
+  "email": "netflix@gmail.com",
+  "passkey": "csm@123"
+}
+
+
+### Sales Rep Login
+POST {{baseUrl}}/api/users/role-login
+Content-Type: application/json
+
+{
+  "email": "netflix@gmail.com",
+  "passkey": "rep@123"
+}

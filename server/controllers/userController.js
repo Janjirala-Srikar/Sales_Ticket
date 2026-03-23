@@ -49,7 +49,74 @@ const login = async (req, res) => {
   }
 };
 
+
+const createRole = async (req, res) => {
+  try {
+    const { email, role, passkey } = req.body;
+
+    const user = await userModel.findUserByEmail(email);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const hashedPasskey = await bcrypt.hash(passkey, 10);
+
+    await userModel.createAccessAccount(user.id, role, hashedPasskey);
+
+    res.json({ message: "Role created successfully" });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+
+const roleLogin = async (req, res) => {
+  try {
+    const { email, passkey } = req.body;
+
+    const user = await userModel.findUserByEmail(email);
+    if (!user) {
+      return res.status(400).json({ message: "Invalid email" });
+    }
+
+    const accessAccounts = await userModel.getAccessAccountsByUserId(user.id);
+
+    let matchedRole = null;
+
+    for (let acc of accessAccounts) {
+      const isMatch = await bcrypt.compare(passkey, acc.passkey);
+
+      if (isMatch) {
+        matchedRole = acc.role;
+        break;
+      }
+    }
+
+    if (!matchedRole) {
+      return res.status(400).json({ message: "Invalid passkey" });
+    }
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: matchedRole },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.json({
+      message: "Login successful",
+      role: matchedRole,
+      token
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   register,
-  login
+  login,
+  createRole,
+  roleLogin
 };

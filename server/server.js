@@ -1,15 +1,13 @@
-require("dotenv").config();
+require("dotenv").config({ path: __dirname + "/.env" });
 
 const express = require("express");
 const cors = require("cors");
 
+// imports
+const pool = require("./config/database");
 
-//imports
-const pool = require("../server/config/database");
-const userController = require("./controllers/userController");
-const emailController = require("./controllers/emailController");
-const verifyToken = require("./middlewares/authMiddleware");
-
+const userRoutes = require("./routes/user.Routes");
+const emailRoutes = require("./routes/email.Routes");
 
 const app = express();
 
@@ -20,7 +18,12 @@ app.get("/", (req, res) => {
   res.json({ message: "Server Running" });
 });
 
+app.use("/api/users", userRoutes);
+app.use("/api/email", emailRoutes);
+
 const PORT = process.env.PORT || 5000;
+
+console.log("ENV CHECK:", process.env.DB_USER); // debug
 
 app.listen(PORT, async () => {
   console.log(`Server running on port ${PORT}`);
@@ -33,12 +36,3 @@ app.listen(PORT, async () => {
     console.error("❌ Database connection failed:", err.message);
   }
 });
-
-
-//routes
-
-// Auth Routes
-app.post("/api/register", userController.register);
-app.post("/api/login", userController.login);
-
-app.post("/api/send-mail", emailController.sendMailHandler);
