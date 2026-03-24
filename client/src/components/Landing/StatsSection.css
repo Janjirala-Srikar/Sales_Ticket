@@ -1,18 +1,91 @@
 /* ── Section shell ── */
-.section { padding: 96px 48px; }
-
-/* ── Stats ── */
-.stats-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-top: 16px; }
-.stat-item {
-  padding: 44px 36px; border: 1px solid var(--border-default);
-  border-radius: var(--radius-xl); text-align: center;
-  background: var(--bg-surface); box-shadow: var(--shadow-sm);
+.section { 
+  padding: 96px 48px; 
+  background: var(--bg-page);
 }
-.stat-num   { font-family: 'DM Serif Display', serif; font-size: 48px; color: var(--blue-primary); line-height: 1; margin-bottom: 8px; }
-.stat-label { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+
+/* ── Stats Section Container ── */
+.stats-section-container {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 100px;
+  align-items: center;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.stats-content-left {
+  display: flex;
+  flex-direction: column;
+  gap: 56px;
+}
+
+.stats-title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 52px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.15;
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+}
+
+.stat-item {
+  padding: 0;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  text-align: left;
+  transition: transform 0.3s ease;
+}
+
+.stat-item:hover {
+  transform: translateX(8px);
+}
+
+.stat-num {
+  font-family: 'DM Serif Display', serif;
+  font-size: 42px;
+  color: var(--blue-primary);
+  line-height: 1;
+  margin-bottom: 12px;
+  font-weight: 400;
+}
+
+.stat-label {
+  font-size: 15px;
+  color: var(--text-body);
+  line-height: 1.7;
+  margin: 0;
+  font-weight: 400;
+}
+
+.stats-content-right {
+  display: flex;
+  margin-left: 30rem;
+  align-items: center;
+  justify-content: center;
+  min-height: 600px;
+}
 
 /* ── Responsive ── */
+@media (max-width: 1024px) {
+  .stats-section-container {
+    grid-template-columns: 1fr;
+    gap: 48px;
+  }
+  
+  .stats-title {
+    font-size: 36px;
+  }
+}
+
 @media (max-width: 900px) {
   .section { padding-left: 20px; padding-right: 20px; }
-  .stats-grid { grid-template-columns: 1fr; }
 }
