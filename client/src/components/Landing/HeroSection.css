@@ -1,26 +1,52 @@
 /* ── Nav ── */
 .nav {
   position: fixed; top: 0; left: 0; right: 0; z-index: 100;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 18px 48px;
-  border-bottom: 1px solid var(--border-subtle);
-  background: rgba(248, 250, 252, 0.88);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 20px 24px;
+  background: transparent;
+}
+.nav-pill {
+  display: flex; align-items: center; gap: 32px;
+  padding: 12px 28px;
+  border-radius: 50px;
+  background: rgba(248, 250, 252, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
 }
 .nav-logo {
   font-family: 'DM Mono', monospace;
   font-size: 14px; letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--blue-primary); font-weight: 500;
+  color: var(--blue-primary); font-weight: 600;
+  white-space: nowrap;
 }
-.nav-link { font-size: 13px; color: var(--text-body); text-decoration: none; transition: color 0.2s; }
+.nav-links {
+  display: flex; gap: 28px; align-items: center;
+}
+.nav-link { 
+  font-size: 13px; color: var(--text-body); text-decoration: none; 
+  transition: color 0.2s; font-weight: 500;
+}
 .nav-link:hover { color: var(--text-primary); }
-.nav-cta {
-  background: var(--btn-primary-bg); color: var(--btn-primary-text) !important;
-  padding: 9px 22px; border-radius: var(--radius-md);
-  font-weight: 600; font-size: 13px; transition: background 0.2s, transform 0.15s;
+.nav-auth {
+  display: flex; gap: 12px; align-items: center;
+  border-left: 1px solid rgba(0, 0, 0, 0.1);
+  padding-left: 28px;
 }
-.nav-cta:hover { background: var(--btn-primary-hover) !important; transform: translateY(-1px); }
+.nav-login {
+  font-size: 13px; color: var(--text-body); text-decoration: none;
+  transition: color 0.2s; font-weight: 500;
+}
+.nav-login:hover { color: var(--blue-primary); }
+.nav-register {
+  background: var(--blue-primary); color: white;
+  padding: 8px 20px; border-radius: 24px;
+  font-size: 13px; text-decoration: none; font-weight: 600;
+  transition: background 0.2s, transform 0.15s;
+  display: inline-block;
+}
+.nav-register:hover { background: var(--blue-deep); transform: translateY(-1px); }
 
 /* ── Hero ── */
 .hero {
@@ -29,12 +55,12 @@
   padding: 140px 24px 0;
   position: relative; overflow: hidden;
   text-align: center;
-  background: linear-gradient(180deg, #EFF6FF 0%, #F8FAFC 55%, #FFFFFF 100%);
+  background: linear-gradient(180deg, #3c77c9 0%, #6ea3e8 32%, #cfe5ff 64%, #f2f7ff 88%, #ffffff 100%);
 }
 .hero-glow {
   position: absolute; top: 0; left: 50%; transform: translateX(-50%);
   width: 900px; height: 500px; pointer-events: none;
-  background: radial-gradient(ellipse 70% 60% at 50% 20%, rgba(55,138,221,0.13) 0%, transparent 70%);
+  background: radial-gradient(ellipse 70% 60% at 50% 20%, rgba(110,163,232,0.16) 0%, transparent 74%);
 }
 .hero-eyebrow {
   font-family: 'DM Mono', monospace;
@@ -53,15 +79,16 @@
 }
 .hero h1 {
   font-family: 'DM Serif Display', serif;
-  font-size: 3rem; line-height: 1.05;
-  color: var(--text-primary); max-width: 760px;
-  margin-bottom: 24px;
+  font-size: clamp(36px, 5vw, 58px); line-height: 1.05;
+  color: #0a234b; max-width: 720px;
+  text-shadow: 0 14px 42px rgba(10, 35, 75, 0.22);
+  margin-bottom: 20px;
   animation: fadeUp 0.8s 0.1s ease both;
 }
-.hero h1 em { font-style: italic; color: var(--blue-primary); }
+.hero h1 em { font-style: italic; color: var(--bg-surface); }
 .hero-sub {
-  font-size: 17px; color: var(--text-body); max-width: 500px; line-height: 1.75;
-  margin-bottom: 40px;
+  font-size: 16px; color: #24364d; max-width: 520px; line-height: 1.6;
+  margin-bottom: 28px;
   animation: fadeUp 0.8s 0.2s ease both;
 }
 .hero-actions {
@@ -76,6 +103,8 @@
   box-shadow: 0 4px 14px rgba(24,95,165,0.25);
   transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
   display: inline-block;
+  border: none;
+  cursor: pointer;
 }
 .btn-primary:hover {
   background: var(--btn-primary-hover); transform: translateY(-2px);
@@ -92,6 +121,62 @@
 .btn-ghost:hover { background: var(--bg-subtle); border-color: var(--blue-muted); }
 .btn-ghost-arrow { transition: transform 0.2s; }
 .btn-ghost:hover .btn-ghost-arrow { transform: translateX(3px); }
+
+.hero-email-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 8px 8px 18px;
+  background: rgba(255,255,255,0.92);
+  border: 1px solid rgba(24,95,165,0.18);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 16px 36px rgba(16, 59, 115, 0.22);
+  min-width: 350px;
+}
+
+.hero-email-pill input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 15px;
+  padding: 10px 6px;
+  background: transparent;
+  color: var(--text-primary);
+}
+
+.hero-email-pill input::placeholder {
+  color: var(--text-muted);
+}
+
+.hero-cta-btn {
+  padding: 12px 26px;
+  border-radius: var(--radius-pill);
+  box-shadow: 0 14px 32px rgba(15, 78, 158, 0.36);
+  background: linear-gradient(120deg, #2d8bff 0%, #1d66d6 45%, #12408f 100%);
+  color: #fff;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: transform 0.15s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.hero-cta-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 40px rgba(16, 69, 140, 0.42);
+  background: linear-gradient(120deg, #3496ff 0%, #1f6ee7 50%, #0f377e 100%);
+}
+
+.hero-cta-btn:active {
+  transform: translateY(0);
+}
+
+.btn-arrow {
+  font-size: 16px;
+  line-height: 1;
+}
 
 /* ── Dashboard image ── */
 .hero-dashboard-wrap {
@@ -192,17 +277,19 @@
   padding: 0 48px 56px;
 }
 .logo-badge {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  padding: 10px 24px; border-radius: var(--radius-md);
-  font-family: 'DM Mono', monospace; font-size: 12px;
-  color: var(--text-body); letter-spacing: 0.04em;
-  box-shadow: var(--shadow-sm);
-  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 140px; height: 64px;
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 10px;
+  border-radius: 16px;
+  color: inherit;
 }
-.logo-badge:hover {
-  border-color: var(--blue-muted);
-  box-shadow: var(--shadow-md);
+
+.logo-icon { font-size: 28px; }
+.logo-name {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.02em;
 }
 .logo-strip-fade {
   height: 80px;

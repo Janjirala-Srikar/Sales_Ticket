@@ -1,14 +1,23 @@
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { SiZendesk, SiIntercom, SiSalesforce, SiHubspot, SiSlack } from 'react-icons/si';
 import './HeroSection.css';
 
-const INTEGRATIONS = ['Zendesk', 'Intercom', 'Freshdesk', 'Salesforce', 'HubSpot', 'Slack'];
+const INTEGRATION_ICONS = [
+  { name: 'Zendesk', Icon: SiZendesk, color: '#03363d' },
+  { name: 'Intercom', Icon: SiIntercom, color: '#1f8ded' },
+  { name: 'Salesforce', Icon: SiSalesforce, color: '#00a1e0' },
+  { name: 'HubSpot', Icon: SiHubspot, color: '#ff7a59' },
+  { name: 'Slack', Icon: SiSlack, color: '#4a154b' },
+];
 
 const TICKER_ITEMS = [
-  { color: 'dot-green', text: 'Acme Corp · "we\'re planning to hire 40 people this quarter" → Expansion signal · $24k ARR' },
-  { color: 'dot-red',   text: 'Northstar Inc · "seriously considering switching to a competitor" → Churn risk · $18k ARR' },
-  { color: 'dot-blue',  text: 'Vertex Labs · "we evaluated Notion but came back for one reason" → Competitor mention' },
-  { color: 'dot-amber', text: 'Riverbend Co · "this missing feature is why we haven\'t upgraded" → Feature gap · $8k blocked' },
-  { color: 'dot-green', text: 'Cascade Media · "our team has grown 3x, we need more seats" → Expansion signal · $36k ARR' },
-  { color: 'dot-red',   text: 'Summit Group · "if this isn\'t fixed by end of month we\'re cancelling" → Churn risk · $12k ARR' },
+  { color: 'dot-green', text: 'Acme Corp - "we\'re planning to hire 40 people this quarter" -> Expansion signal - $24k ARR' },
+  { color: 'dot-red',   text: 'Northstar Inc - "seriously considering switching to a competitor" -> Churn risk - $18k ARR' },
+  { color: 'dot-blue',  text: 'Vertex Labs - "we evaluated Notion but came back for one reason" -> Competitor mention' },
+  { color: 'dot-amber', text: 'Riverbend Co - "this missing feature is why we haven\'t upgraded" -> Feature gap - $8k blocked' },
+  { color: 'dot-green', text: 'Cascade Media - "our team has grown 3x, we need more seats" -> Expansion signal - $36k ARR' },
+  { color: 'dot-red',   text: 'Summit Group - "if this isn\'t fixed by end of month we\'re cancelling" -> Churn risk - $12k ARR' },
 ];
 
 function DashboardPreview() {
@@ -19,32 +28,28 @@ function DashboardPreview() {
         <span className="db-dot" style={{ background: '#F59E0B' }} />
         <span className="db-dot" style={{ background: '#10B981' }} />
         <span style={{ flex: 1, textAlign: 'center', fontFamily: 'DM Mono, monospace', fontSize: 11, color: 'var(--text-muted)' }}>
-          ticketsignal · revenue-signals
+          ticketsignal - revenue-signals
         </span>
       </div>
       <div className="dashboard-inner">
-        {/* Card 1 */}
         <div className="db-card">
           <div className="db-card-label">Signals Today</div>
           <div className="db-card-val">47</div>
           <div className="db-card-sub">+12 from yesterday</div>
-          <div className="db-card-tag tag-green">↑ 34%</div>
+          <div className="db-card-tag tag-green">^ 34%</div>
         </div>
-        {/* Card 2 */}
         <div className="db-card">
           <div className="db-card-label">Revenue at Risk</div>
           <div className="db-card-val">$82k</div>
           <div className="db-card-sub">5 accounts flagged</div>
           <div className="db-card-tag tag-red">Churn risk</div>
         </div>
-        {/* Card 3 */}
         <div className="db-card">
           <div className="db-card-label">Expansion Pipeline</div>
           <div className="db-card-val">$214k</div>
           <div className="db-card-sub">11 opportunities</div>
           <div className="db-card-tag tag-blue">Active</div>
         </div>
-        {/* Wide card */}
         <div className="db-card db-wide">
           <div className="db-card-label">Recent Signals</div>
           <div className="db-row">
@@ -61,7 +66,6 @@ function DashboardPreview() {
             ))}
           </div>
         </div>
-        {/* Card 5 */}
         <div className="db-card">
           <div className="db-card-label">Feature Requests</div>
           <div className="db-card-val">23</div>
@@ -74,56 +78,73 @@ function DashboardPreview() {
 }
 
 export default function HeroSection() {
+  const navigate = useNavigate();
+  const [ctaEmail, setCtaEmail] = useState('');
+
+  const handleCtaSubmit = (e) => {
+    e.preventDefault();
+    navigate('/register', { state: { prefillEmail: ctaEmail } });
+  };
+
   return (
     <>
-      {/* NAV */}
       <nav className="nav">
-        <div className="nav-logo">TicketSignal</div>
-        <div className="flex items-center gap-8">
-          <a href="#how"     className="nav-link">How it works</a>
-          <a href="#signals" className="nav-link">Signals</a>
-          <a href="#teams"   className="nav-link">Teams</a>
-          <a href="#cta"     className="nav-link nav-cta ml-4">Request Access</a>
+        <div className="nav-pill">
+          <div className="nav-logo">TicketSignal</div>
+          <div className="nav-links">
+            <Link to="/#how"     className="nav-link">How it works</Link>
+            <Link to="/#signals" className="nav-link">Signals</Link>
+            <Link to="/#teams"   className="nav-link">Teams</Link>
+          </div>
+          <div className="nav-auth">
+            <Link to="/login" className="nav-register">Login / Register</Link>
+          </div>
         </div>
       </nav>
 
-      {/* HERO */}
       <section className="hero">
         <div className="hero-glow" />
         <div className="hero-eyebrow">
           <span className="hero-eyebrow-dot" />
           Revenue Intelligence Platform
         </div>
-        <h1>Your customers are telling you<br /><em>everything.</em><br />Nobody's listening.</h1>
+        <h1>Turn every support ticket into <em>revenue intelligence.</em></h1>
         <p className="hero-sub">
-          Every support ticket is a business signal — expansion, churn risk, competitive threat.
-          TicketSignal reads them all and routes the insight to the person who can act on it, in real time.
+          Capture churn risks, expansion signals, and competitor mentions straight from support threads, then route each to the owner in seconds.
         </p>
         <div className="hero-actions">
-          <a href="#cta" className="btn-primary">Request Early Access</a>
-          <a href="#how" className="btn-ghost">
-            See how it works <span className="btn-ghost-arrow">→</span>
-          </a>
+          <form className="hero-email-pill" onSubmit={handleCtaSubmit}>
+            <input
+              type="email"
+              placeholder="Enter your work email"
+              value={ctaEmail}
+              onChange={(e) => setCtaEmail(e.target.value)}
+              required
+            />
+            <button type="submit" className="hero-cta-btn">
+              Get Access
+            </button>
+          </form>
         </div>
 
-        {/* Dashboard */}
         <div className="hero-dashboard-wrap w-full" style={{ maxWidth: 1000 }}>
           <DashboardPreview />
         </div>
       </section>
 
-      {/* LOGO STRIP */}
       <div className="logo-strip-wrap">
         <p className="logo-strip-label">Works seamlessly with</p>
         <div className="logo-strip">
-          {INTEGRATIONS.map(name => (
-            <span key={name} className="logo-badge">{name}</span>
+          {INTEGRATION_ICONS.map(({ name, Icon, color }) => (
+            <span key={name} className="logo-badge" aria-label={name} title={name}>
+              <Icon className="logo-icon" style={{ color }} />
+              <span className="logo-name" style={{ color }}>{name}</span>
+            </span>
           ))}
         </div>
         <div className="logo-strip-fade" />
       </div>
 
-      {/* TICKER */}
       <div className="ticker-wrap">
         <div className="ticker-track">
           {[...TICKER_ITEMS, ...TICKER_ITEMS].map((item, i) => (

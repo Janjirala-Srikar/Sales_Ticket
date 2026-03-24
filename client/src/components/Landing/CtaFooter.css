@@ -36,6 +36,8 @@
   box-shadow: 0 4px 14px rgba(24,95,165,0.25);
   transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
   display: inline-block;
+  border: none;
+  cursor: pointer;
 }
 .btn-primary:hover {
   background: var(--btn-primary-hover); transform: translateY(-2px);

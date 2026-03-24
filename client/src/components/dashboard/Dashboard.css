@@ -1,0 +1,90 @@
+.dash-shell {
+  min-height: 100vh;
+  background: var(--bg-page);
+  padding: 64px 24px;
+}
+
+.dash-bar {
+  max-width: 1040px;
+  margin: 0 auto 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dash-kicker {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-family: 'DM Mono', monospace;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.dash-bar h1 {
+  margin-top: 6px;
+  color: var(--text-primary);
+  font-size: 28px;
+}
+
+.dash-user {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: var(--blue-primary);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+
+.dash-link {
+  background: none;
+  border: none;
+  color: var(--blue-primary);
+  cursor: pointer;
+  font-weight: 600;
+  padding: 0;
+}
+
+.dash-cards {
+  max-width: 1040px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.dash-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-md);
+}
+
+.dash-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 6px;
+}
+
+.dash-value {
+  font-family: 'DM Serif Display', serif;
+  font-size: 30px;
+  color: var(--blue-primary);
+}
+
+.dash-note {
+  color: var(--text-body);
+  font-size: 14px;
+  margin-top: 4px;
+}
