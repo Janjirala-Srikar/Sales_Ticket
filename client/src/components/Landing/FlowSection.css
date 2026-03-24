@@ -1,0 +1,49 @@
+/* ── Flow ── */
+.flow-section {
+  padding: 96px 48px;
+  background: var(--bg-subtle);
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+.flow-steps {
+  display: flex; gap: 0; margin-top: 56px; position: relative;
+}
+.flow-steps::before {
+  content: '';
+  position: absolute; top: 27px; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--blue-muted), transparent);
+}
+.flow-step {
+  flex: 1; padding: 0 24px;
+  border-right: 1px solid var(--border-subtle);
+}
+.flow-step:last-child { border-right: none; }
+.step-num {
+  width: 54px; height: 54px;
+  background: var(--bg-surface); border: 1px solid var(--border-default);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-family: 'DM Mono', monospace; font-size: 13px; color: var(--blue-primary);
+  margin-bottom: 22px; position: relative; z-index: 1;
+  box-shadow: var(--shadow-sm);
+}
+.flow-step h3 { font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+.flow-step p  { font-size: 13px; color: var(--text-body); line-height: 1.75; }
+
+.section-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--blue-mid); margin-bottom: 14px;
+}
+.section h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(30px, 4vw, 50px); line-height: 1.12;
+  color: var(--text-primary); margin-bottom: 16px;
+}
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .flow-section { padding-left: 20px; padding-right: 20px; }
+  .flow-steps { flex-direction: column; }
+  .flow-steps::before { display: none; }
+  .flow-step { border-right: none; border-bottom: 1px solid var(--border-subtle); padding: 20px 0; }
+}

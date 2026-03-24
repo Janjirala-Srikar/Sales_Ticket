@@ -1,0 +1,59 @@
+/* ── CTA ── */
+.cta-section {
+  padding: 120px 48px; text-align: center; position: relative; overflow: hidden;
+  background: linear-gradient(180deg, var(--bg-page) 0%, var(--blue-surface) 100%);
+}
+.cta-glow {
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
+  width: 800px; height: 400px; pointer-events: none;
+  background: radial-gradient(ellipse, rgba(24,95,165,0.07) 0%, transparent 70%);
+}
+.cta-section h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(32px, 5vw, 58px); max-width: 680px;
+  margin: 0 auto 20px; line-height: 1.1; color: var(--text-primary);
+}
+.cta-section p { color: var(--text-body); font-size: 17px; max-width: 460px; margin: 0 auto 36px; }
+.cta-form { display: flex; gap: 10px; max-width: 420px; margin: 0 auto; }
+.cta-form input {
+  flex: 1; padding: 13px 18px;
+  background: var(--input-bg); border: 1px solid var(--input-border);
+  border-radius: var(--input-radius); color: var(--input-text);
+  font-size: 14px; font-family: 'Plus Jakarta Sans', sans-serif;
+  outline: none; transition: border-color 0.2s, box-shadow 0.2s;
+}
+.cta-form input:focus {
+  border-color: var(--input-border-focus);
+  box-shadow: 0 0 0 3px rgba(55,138,221,0.12);
+}
+.cta-form input::placeholder { color: var(--input-placeholder); }
+.cta-note { margin-top: 14px; font-size: 12px; color: var(--text-muted); }
+
+.btn-primary {
+  background: var(--btn-primary-bg); color: var(--btn-primary-text);
+  padding: 14px 32px; border-radius: var(--radius-md);
+  font-weight: 600; font-size: 15px; text-decoration: none;
+  box-shadow: 0 4px 14px rgba(24,95,165,0.25);
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  display: inline-block;
+}
+.btn-primary:hover {
+  background: var(--btn-primary-hover); transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(24,95,165,0.35);
+}
+
+/* ── Footer ── */
+.footer {
+  padding: 36px 48px;
+  border-top: 1px solid var(--border-subtle);
+  display: flex; justify-content: space-between; align-items: center;
+  background: var(--bg-surface);
+}
+.footer-logo { font-family: 'DM Mono', monospace; font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--blue-primary); }
+.footer p { font-size: 12px; color: var(--text-muted); }
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .cta-section { padding-left: 20px; padding-right: 20px; }
+  .footer { flex-direction: column; gap: 10px; text-align: center; }
+}

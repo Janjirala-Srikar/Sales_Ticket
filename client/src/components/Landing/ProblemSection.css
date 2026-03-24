@@ -1,0 +1,64 @@
+/* ── Section shell ── */
+.section { padding: 96px 48px; }
+.section-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
+  color: var(--blue-mid); margin-bottom: 14px;
+}
+.section h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(30px, 4vw, 50px); line-height: 1.12;
+  color: var(--text-primary); margin-bottom: 16px;
+}
+
+/* ── Gap section ── */
+.gap-grid {
+  display: grid; grid-template-columns: 1fr 1fr;
+  border: 1px solid var(--border-default); border-radius: var(--radius-xl);
+  overflow: hidden; margin-top: 56px;
+  box-shadow: var(--shadow-md);
+}
+.gap-left  { background: var(--bg-surface); padding: 36px; border-right: 1px solid var(--border-subtle); }
+.gap-right { background: var(--bg-subtle);  padding: 36px; display: flex; align-items: center; justify-content: center; }
+.gap-col-label {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  letter-spacing: 0.15em; text-transform: uppercase;
+  color: var(--text-muted); margin-bottom: 18px;
+}
+.ticket-card {
+  background: var(--bg-page); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg); padding: 18px; margin-bottom: 12px;
+  position: relative; box-shadow: var(--shadow-sm);
+  transition: box-shadow 0.2s;
+}
+.ticket-card:hover { box-shadow: var(--shadow-md); }
+.ticket-meta {
+  font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text-muted);
+  display: flex; justify-content: space-between; margin-bottom: 10px;
+}
+.ticket-text { font-size: 14px; color: var(--text-body); line-height: 1.65; }
+.ticket-text mark {
+  background: rgba(55,138,221,0.12); color: var(--blue-primary);
+  border-radius: 3px; padding: 0 3px;
+}
+.signal-pill {
+  position: absolute; top: 14px; right: 14px;
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  padding: 3px 9px; border-radius: var(--radius-pill); font-weight: 500;
+}
+.pill-expansion { background: var(--success-bg); color: var(--success-text); border: 1px solid var(--success-border); }
+.pill-churn     { background: var(--error-bg);   color: var(--error-text);   border: 1px solid var(--error-border); }
+.pill-feature   { background: var(--warning-bg); color: var(--warning-text); border: 1px solid var(--warning-border); }
+.pill-competitor{ background: var(--info-bg);    color: var(--info-text);    border: 1px solid var(--info-border); }
+.dead-zone {
+  text-align: center; padding: 40px;
+}
+.dead-zone-icon { font-size: 48px; opacity: 0.2; margin-bottom: 16px; color: var(--blue-primary); }
+.dead-zone p { color: var(--text-muted); font-size: 15px; max-width: 240px; line-height: 1.7; }
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+  .section { padding-left: 20px; padding-right: 20px; }
+  .gap-grid { grid-template-columns: 1fr; }
+}
