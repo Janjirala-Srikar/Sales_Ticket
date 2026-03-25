@@ -2,9 +2,37 @@ const Ticket = require("../models/Ticket");
 const { classifyTicket } = require("../utils/groqClassifier");
 
 // POST /api/tickets
+const crypto = require("crypto");
+const WEBHOOK_SECRET = process.env.ZENDESK_WEBHOOK_SECRET;
+
+function verifyZendeskWebhook(signature, timestamp, body) {
+  const hmac = crypto.createHmac("sha256", WEBHOOK_SECRET);
+  const digest = hmac.update(timestamp + body).digest("base64");
+  return digest === signature;
+}
+
 const createTicket = async (req, res) => {
   try {
-    const { subject, description } = req.body;
+    const signature = req.headers["x-zendesk-webhook-signature"];
+    const timestamp = req.headers["x-zendesk-webhook-signature-timestamp"];
+    const body = req.rawBody || JSON.stringify(req.body);
+
+    if (!verifyZendeskWebhook(signature, timestamp, body)) {
+      console.log("❌ Invalid Zendesk webhook signature!");
+      return res.status(401).send("Unauthorized");
+    }
+
+    console.log("✅ Verified Zendesk webhook:", req.body);
+
+    const subject =
+      req.body.subject ||
+      req.body.ticket?.subject;
+
+    const description =
+      req.body.description ||
+      req.body.ticket?.description ||
+      req.body.comment?.body ||
+      "";
 
     if (!subject || !description) {
       return res.status(400).json({ error: "Subject and description are required." });
@@ -20,7 +48,7 @@ const createTicket = async (req, res) => {
     });
 
     return res.status(201).json({
-      message: "Ticket submitted.",
+      message: "Ticket submitted and classified.",
       ticketId,
       signals,
     });
@@ -67,6 +95,6 @@ const getTicketById = async (req, res) => {
 
 module.exports = {
   createTicket,
-  getAllTickets,   // renamed for clarity
+  getAllTickets,   
   getTicketById
 };

@@ -50,6 +50,7 @@
 .slack-btn.primary:hover { background: #0f4f82; }
 .alert-copy h3 { font-family: 'DM Serif Display', serif; font-size: 30px; color: var(--text-primary); margin-bottom: 14px; }
 .alert-copy p  { color: var(--text-body); font-size: 15px; line-height: 1.8; margin-bottom: 18px; }
+
 .feature-list  { list-style: none; }
 .feature-list li {
   display: flex; align-items: flex-start; gap: 12px;

@@ -102,6 +102,7 @@ export default function StatsSection() {
               verticalDistance={70}
               delay={4500}
               pauseOnHover={true}
+              
             >
 
               {/* Card 1 — Revenue range */}

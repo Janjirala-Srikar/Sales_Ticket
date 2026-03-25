@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { useMutation } from '@tanstack/react-query';
 import './AuthPage.css';
 import { useAuth } from '../../context/AuthContext';
 
@@ -13,7 +14,6 @@ export default function AuthPage({ defaultMode = 'login' }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
@@ -33,33 +33,57 @@ export default function AuthPage({ defaultMode = 'login' }) {
     [mode]
   );
 
-  const handleSubmit = async (e) => {
+  const loginMutation = useMutation({
+    mutationFn: async (payload) => {
+      const res = await axios.post(`${API_BASE}/users/login`, payload);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      const token = data?.token;
+      const profile = data?.user || {};
+      const profileName = profile.name || profile.username || name;
+      const profileEmail = profile.email || email;
+      if (!token) {
+        setError('Token missing from response');
+        return;
+      }
+      login(token, { ...profile, name: profileName, email: profileEmail, username: profileName });
+      navigate('/dashboard', { replace: true });
+    },
+    onError: (err) => {
+      const apiMessage = err.response?.data?.message;
+      setError(apiMessage || err.message || 'Something went wrong');
+    },
+  });
+
+  const registerMutation = useMutation({
+    mutationFn: async (payload) => {
+      const res = await axios.post(`${API_BASE}/users/register`, payload);
+      return res.data;
+    },
+    onSuccess: () => {
+      setMessage('Account created. Signing you in...');
+      loginMutation.mutate({ email, password });
+    },
+    onError: (err) => {
+      const apiMessage = err.response?.data?.message;
+      setError(apiMessage || err.message || 'Something went wrong');
+    },
+  });
+
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
     setMessage('');
 
-    try {
-      if (mode === 'register') {
-        await axios.post(`${API_BASE}/users/register`, { name, email, password });
-        setMessage('Account created. Signing you in...');
-      }
-
-      const loginRes = await axios.post(`${API_BASE}/users/login`, { email, password });
-      const token = loginRes.data?.token;
-      if (!token) {
-        throw new Error('Token missing from response');
-      }
-
-      login(token, { email });
-      navigate('/dashboard', { replace: true });
-    } catch (err) {
-      const apiMessage = err.response?.data?.message;
-      setError(apiMessage || err.message || 'Something went wrong');
-    } finally {
-      setLoading(false);
+    if (mode === 'register') {
+      registerMutation.mutate({ name, email, password });
+    } else {
+      loginMutation.mutate({ email, password });
     }
   };
+
+  const loading = loginMutation.isPending || registerMutation.isPending;
 
   const switchMode = (nextMode) => {
     setMode(nextMode);

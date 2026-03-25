@@ -1,21 +1,59 @@
+@reference "tailwindcss";
+
 .dash-shell {
   min-height: 100vh;
   background: var(--bg-page);
-  padding: 64px 24px;
+  display: flex;
+  color: var(--text-primary);
+}
+
+.dash-app {
+  display: flex;
+  gap: 18px;
+  width: 100%;
+}
+
+.dash-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding-right: 24px;
+}
+
+.dash-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+}
+
+.dash-menu {
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-surface);
+  border-radius: 10px;
+  width: 36px;
+  height: 32px;
+  cursor: pointer;
+}
+
+.dash-header-title {
+  font-weight: 700;
+  color: var(--text-primary);
 }
 
 .dash-bar {
-  max-width: 1040px;
-  margin: 0 auto 32px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin-bottom: 16px;
 }
 
 .dash-kicker {
   text-transform: uppercase;
   letter-spacing: 0.18em;
-  font-family: 'DM Mono', monospace;
+  font-family: 'Inter', sans-serif;
   color: var(--text-muted);
   font-size: 12px;
 }
@@ -24,6 +62,7 @@
   margin-top: 6px;
   color: var(--text-primary);
   font-size: 28px;
+  font-weight: 700;
 }
 
 .dash-user {
@@ -37,7 +76,7 @@
   height: 42px;
   border-radius: 50%;
   background: var(--blue-primary);
-  color: #fff;
+  color: var(--text-on-blue);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -47,44 +86,42 @@
 .dash-link {
   background: none;
   border: none;
-  color: var(--blue-primary);
+  color: var(--text-link);
   cursor: pointer;
   font-weight: 600;
   padding: 0;
 }
 
 .dash-cards {
-  max-width: 1040px;
-  margin: 0 auto;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 16px;
 }
 
 .dash-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-lg);
-  padding: 20px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 16px;
+  padding: 24px;
   box-shadow: var(--shadow-md);
 }
 
 .dash-label {
-  font-size: 13px;
+  font-size: 12px;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.1em;
-  margin-bottom: 6px;
+  letter-spacing: 0.08em;
+  margin-bottom: 8px;
 }
 
 .dash-value {
   font-family: 'DM Serif Display', serif;
-  font-size: 30px;
+  font-size: 32px;
   color: var(--blue-primary);
 }
 
 .dash-note {
   color: var(--text-body);
   font-size: 14px;
-  margin-top: 4px;
+  margin-top: 6px;
 }
