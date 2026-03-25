@@ -20,7 +20,7 @@ export default function AlertSection() {
                   <span className="slack-time">Today at 2:14 PM</span>
                 </div>
                 <div className="slack-text">
-                  🟢 <strong>Expansion signal detected</strong> — Acme Corp (@sarah.chen your account)
+                  🔔 <strong>Expansion signal detected</strong> — Acme Corp (@sarah.chen your account)
                 </div>
                 <div className="slack-attachment">
                   <div className="attach-title">Acme Corp — Expansion Opportunity</div>

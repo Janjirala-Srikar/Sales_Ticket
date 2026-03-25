@@ -1,0 +1,68 @@
+.sidebar-theme {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border-right: 1px solid var(--border-subtle);
+}
+
+.sidebar-theme--brand {
+  --sidebar-accent: var(--blue-primary);
+  --sidebar-accent-strong: var(--blue-deep);
+}
+
+.sidebar-theme--white {
+  --sidebar-accent: #0f172a;
+  --sidebar-accent-strong: #0b1a33;
+  background: #ffffff;
+  color: #0f172a;
+  border-right: 1px solid #e2e8f0;
+}
+
+/* Keep text + fills in sync with accent */
+.sidebar-theme .text-violet-500,
+.sidebar-theme .fill-violet-500 {
+  color: var(--sidebar-accent) !important;
+  fill: var(--sidebar-accent) !important;
+}
+
+/* Soft highlight for active rows that used violet gradient */
+.sidebar-theme .from-violet-500\/\[0\.12\] {
+  --tw-gradient-from: color-mix(in srgb, var(--sidebar-accent) 12%, transparent);
+  --tw-gradient-to: rgb(255 255 255 / 0);
+}
+.sidebar-theme .to-violet-500\/\[0\.04\] {
+  --tw-gradient-to: color-mix(in srgb, var(--sidebar-accent) 4%, transparent);
+}
+.sidebar-theme .dark\:from-violet-500\/\[0\.24\] {
+  --tw-gradient-from: color-mix(in srgb, var(--sidebar-accent) 24%, transparent);
+}
+
+/* Generic linear-to-r background (covers truthy/falsey template output) */
+.sidebar-theme .bg-linear-to-r {
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--sidebar-accent) 12%, transparent) 0%,
+    color-mix(in srgb, var(--sidebar-accent) 4%, transparent) 100%
+  );
+}
+
+/* Subtle defaults for text + icons when the palette comes from App.css */
+.sidebar-theme svg,
+.sidebar-theme a {
+  color: inherit;
+}
+
+.sidebar-theme .text-gray-800 {
+  color: var(--text-primary);
+}
+.sidebar-theme .text-gray-400,
+.sidebar-theme .dark\:text-gray-500 {
+  color: var(--text-muted);
+}
+.sidebar-theme .hover\:text-gray-900:hover,
+.sidebar-theme .dark\:hover\:text-white:hover {
+  color: var(--text-primary);
+}
+
+/* Ensure background hover states feel on-brand */
+.sidebar-theme .bg-gray-900\/30 { background-color: rgba(12, 68, 124, 0.18); }
+.sidebar-theme .hover\:bg-gray-100:hover { background-color: var(--bg-hover); }

@@ -37,12 +37,21 @@ const login = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
+      { id: user.id, email: user.email, role: user.role, name: user.name },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
 
-    res.json({ message: "Login successful", token });
+    res.json({
+      message: "Login successful",
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      },
+    });
 
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -98,7 +107,7 @@ const roleLogin = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: matchedRole },
+      { id: user.id, email: user.email, role: matchedRole, name: user.name },
       process.env.JWT_SECRET,
       { expiresIn: "1d" }
     );
@@ -106,7 +115,13 @@ const roleLogin = async (req, res) => {
     res.json({
       message: "Login successful",
       role: matchedRole,
-      token
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: matchedRole,
+      },
     });
 
   } catch (error) {
