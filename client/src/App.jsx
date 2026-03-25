@@ -20,7 +20,7 @@ function AppRoutes() {
       <Route path="/login" element={<AuthPage defaultMode="login" />} />
       <Route path="/register" element={<AuthPage defaultMode="register" />} />
       <Route
-        path="/dashboard"
+        path="/dashboard/*"
         element={(
           <ProtectedRoute>
             <Dashboard />
