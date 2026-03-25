@@ -11,7 +11,7 @@ const ROLE_MAP = {
 };
 
 async function classifyTicket(subject, description) {
-const prompt = `You are a revenue intelligence AI for a B2B SaaS company.
+  const prompt = `You are a revenue intelligence AI for a B2B SaaS company.
 
 Your job is to analyze a support ticket and extract ONLY the revenue signals that are actually present.
 
@@ -85,20 +85,52 @@ Follow these strictly.
     });
 
     const raw = completion.choices[0]?.message?.content?.trim();
+
+    // 🧾 RAW OUTPUT
+    console.log("🧾 RAW LLM OUTPUT:\n", raw);
+
     const cleaned = raw.replace(/```json|```/g, "").trim();
-    const result = JSON.parse(cleaned);
+
+    let result;
+    try {
+      result = JSON.parse(cleaned);
+    } catch (parseErr) {
+      console.error("❌ JSON Parse Failed:", parseErr.message);
+      console.error("⚠️ Cleaned Output Was:\n", cleaned);
+      return [];
+    }
+
+    // ✅ Parsed result
+    console.log("✅ Groq parsed result:", result);
 
     const validTypes = ["expansion", "churn_risk", "competitor_mention", "feature_gap"];
     const seen = new Set();
 
-    return (result.signals || [])
-      .filter((s) => validTypes.includes(s.type) && !seen.has(s.type) && seen.add(s.type))
+    const finalSignals = (result.signals || [])
+      .filter((s) => {
+        if (!validTypes.includes(s.type)) {
+          console.warn("⚠️ Invalid signal type skipped:", s.type);
+          return false;
+        }
+        if (seen.has(s.type)) {
+          console.warn("⚠️ Duplicate signal skipped:", s.type);
+          return false;
+        }
+        seen.add(s.type);
+        return true;
+      })
       .map((s) => ({
-        type:     s.type,
+        type: s.type,
         headline: s.headline || "",
-        summary:  s.summary  || "",
-        assigned_to: ROLE_MAP[s.type],   // role this signal belongs to
+        summary: s.summary || "",
+        assigned_to: ROLE_MAP[s.type],
       }));
+
+    // 🎯 FINAL OUTPUT
+    console.log("🎯 FINAL SIGNALS RETURNED:", finalSignals);
+    console.log("📊 Signal count:", finalSignals.length);
+
+    return finalSignals;
 
   } catch (err) {
     console.error("❌ Groq failed:", err.message);
