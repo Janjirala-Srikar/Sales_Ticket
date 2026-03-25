@@ -19,14 +19,16 @@ export default function CtaFooter() {
         <h2>Stop letting revenue signals<br />close as support tickets.</h2>
         <p>Join the early access list. We're onboarding a limited cohort of B2B teams to build this together.</p>
         <form className="cta-form" onSubmit={handleCta}>
-          <input
-            type="email"
-            placeholder="your@company.com"
-            value={ctaEmail}
-            onChange={(e) => setCtaEmail(e.target.value)}
-            required
-          />
-          <button type="submit" className="btn-primary">Get Access</button>
+          <div className="cta-email-pill">
+            <input
+              type="email"
+              placeholder="your@company.com"
+              value={ctaEmail}
+              onChange={(e) => setCtaEmail(e.target.value)}
+              required
+            />
+            <button type="submit" className="cta-pill-btn">Get Access</button>
+          </div>
         </form>
         <p className="cta-note">Works with Zendesk, Intercom &amp; Freshdesk. Setup in under a day.</p>
       </section>
