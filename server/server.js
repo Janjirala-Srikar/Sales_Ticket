@@ -52,4 +52,5 @@ app.listen(PORT, async () => {
 // ─── Tickets ────────────────────────────────────────────────
 app.post("/api/tickets",     ticketController.createTicket);
 app.get ("/api/tickets/:userId",     ticketController.getAllTicketsofUser);
+app.post("/api/signals", ticketController.getSignals);
 

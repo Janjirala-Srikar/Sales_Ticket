@@ -129,3 +129,14 @@ Content-Type: application/json
 ### Get all tickets
 GET http://localhost:5000/api/tickets/30001
 Content-Type: application/json
+
+
+
+###
+POST http://localhost:5000/api/signals
+Content-Type: application/json
+
+{
+  "user_id": 30001,
+  "role": "Account Executive"
+}

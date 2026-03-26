@@ -1,4 +1,5 @@
 const pool = require("../config/database"); 
+const { classifyTicket } = require("../utils/groqClassifier"); // adjust path
 
 // ✅ POST /api/tickets
 const createTicket = async (req, res) => {
@@ -63,12 +64,32 @@ const createTicket = async (req, res) => {
     receiverEmail
   ]
 );
-
     console.log("✅ Ticket stored for user:", userId);
 
-    return res.status(200).json({
-      message: "Ticket stored successfully",
-    });
+// 🔍 STEP 4: Run revenue signal classification
+const signals = await classifyTicket(subject, description);
+console.log("🎯 Signals for ticket:", zendeskTicketId, signals);
+
+// 🔍 STEP 5: Store signals in DB (if any)
+if (signals.length > 0) {
+  for (const signal of signals) {
+    await pool.execute(
+      `INSERT INTO ticket_signals (zendesk_ticket_id, user_id, signal_type, headline, summary, assigned_to)
+       VALUES (?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE
+         headline = VALUES(headline),
+         summary = VALUES(summary),
+         assigned_to = VALUES(assigned_to)`,
+      [zendeskTicketId, userId, signal.type, signal.headline, signal.summary, signal.assigned_to]
+    );
+  }
+  console.log("✅ Signals stored:", signals.length);
+}
+
+return res.status(200).json({
+  message: "Ticket stored successfully",
+  signals_detected: signals.length,
+});
 
   } catch (err) {
     console.error("❌ Error in createTicket:", err);
@@ -100,10 +121,29 @@ const getAllTicketsofUser = async (req, res) => {
   }
 };
 
-// ✅ GET ticket by id
+const getSignals = async (req, res) => {
+  try {
+    const { user_id, role } = req.body;
 
+    if (!user_id || !role) {
+      return res.status(400).json({ error: "user_id and role are required" });
+    }
+
+    const [signals] = await pool.execute(
+      `SELECT * FROM ticket_signals 
+       WHERE user_id = ? AND assigned_to = ?`,
+      [user_id, role]
+    );
+
+    return res.status(200).json({ signals });
+  } catch (err) {
+    console.error("❌ getSignals error:", err);
+    return res.status(500).json({ error: "Failed to fetch signals" });
+  }
+};
 
 module.exports = {
   createTicket,
-  getAllTicketsofUser
+  getAllTicketsofUser,
+  getSignals
 };
