@@ -1,25 +1,39 @@
 @reference "tailwindcss";
 
 .dash-shell {
-  min-height: 100vh;
+  height: 100vh;
   background: var(--bg-page);
   display: flex;
   color: var(--text-primary);
+  overflow: hidden;
 }
 
 .dash-app {
   display: flex;
   gap: 18px;
   width: 100%;
+  height: 100%;
+  min-height: 0;
 }
 
 .dash-content {
   flex: 1;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 16px;
-  padding-right: 24px;
+  padding-right: 0;
+  overflow: hidden;
+}
+
+.dash-main {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: 24px;
+  padding-right: 0;
+  scrollbar-gutter: stable;
 }
 
 .dash-header {
@@ -224,4 +238,313 @@
 .content-card p {
   margin: 6px 0;
   color: var(--text-body);
+}
+
+.ticket-health-layout {
+  display: grid;
+  gap: 20px;
+  padding-right: 24px;
+}
+
+.ticket-health-summary {
+  background: var(--card-bg-tinted);
+  border-color: var(--card-border-tinted);
+}
+
+.ticket-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.ticket-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.ticket-card {
+  background: linear-gradient(180deg, var(--bg-surface) 0%, var(--blue-surface) 100%);
+  border: 1px solid var(--card-border-tinted);
+  border-radius: 18px;
+  box-shadow: var(--shadow-md);
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+}
+
+.ticket-card__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.ticket-card__top-main {
+  width: 100%;
+  min-width: 0;
+}
+
+.ticket-card__eyebrow {
+  font-size: 12px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 4px;
+}
+
+.ticket-card__eyebrow--row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+}
+
+.ticket-card__eyebrow-date {
+  white-space: nowrap;
+  color: var(--blue-deep);
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 600;
+}
+
+.ticket-card__title {
+  margin: 0;
+  color: var(--text-primary);
+  font-size: 18px;
+  line-height: 1.35;
+  font-weight: 700;
+}
+
+.ticket-card__badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ticket-card__message {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 14px;
+  color: var(--text-body);
+  font-size: 14px;
+  line-height: 1.55;
+  min-height: 112px;
+}
+
+.ticket-card__message--button {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 140ms ease, background-color 140ms ease, transform 140ms ease;
+}
+
+.ticket-card__message--button:hover {
+  border-color: var(--blue-muted);
+  background: var(--bg-surface);
+  transform: translateY(-1px);
+}
+
+.ticket-card__meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.ticket-card__meta-item {
+  background: var(--bg-surface);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  padding: 12px;
+  display: grid;
+  gap: 4px;
+}
+
+.ticket-card__meta-item span {
+  color: var(--text-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.ticket-card__meta-item strong {
+  color: var(--blue-deep);
+  font-size: 13px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.ticket-card__meta-item:last-child strong {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  word-break: normal;
+}
+
+.ticket-card__footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.ticket-card__signal-summary {
+  color: var(--text-body);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ticket-card__signal-summary--panel {
+  width: 100%;
+  background: var(--bg-surface);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  padding: 12px 14px;
+}
+
+.ticket-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 44, 83, 0.35);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 10000;
+}
+
+.ticket-modal {
+  width: min(820px, 100%);
+  max-height: min(88vh, 900px);
+  overflow: auto;
+  background: var(--bg-surface);
+  border: 1px solid var(--card-border);
+  border-radius: 22px;
+  box-shadow: var(--shadow-lg);
+  padding: 24px;
+  display: grid;
+  gap: 18px;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.ticket-modal::-webkit-scrollbar {
+  display: none;
+}
+
+.ticket-modal__header {
+  display: block;
+}
+
+.ticket-modal__header h2 {
+  margin: 0;
+  font-size: 26px;
+}
+
+.ticket-detail-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.ticket-detail-card {
+  background: var(--card-bg-tinted);
+  border: 1px solid var(--card-border-tinted);
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: grid;
+  gap: 4px;
+}
+
+.ticket-detail-card__label {
+  color: var(--text-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.ticket-detail-card__value {
+  color: var(--blue-deep);
+  font-size: 14px;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.ticket-message {
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+  padding: 18px;
+}
+
+.ticket-message__label {
+  color: var(--text-muted);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+}
+
+.ticket-message__body {
+  color: var(--text-body);
+  white-space: pre-wrap;
+  line-height: 1.65;
+  font-size: 15px;
+}
+
+.ticket-signal-stack {
+  display: grid;
+  gap: 12px;
+}
+
+.ticket-signal-card {
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.ticket-signal-card__top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+
+.ticket-signal-card__headline {
+  color: var(--text-primary);
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.ticket-signal-card p {
+  margin: 0;
+}
+
+@media (max-width: 720px) {
+  .ticket-card-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-content {
+    padding-right: 0;
+  }
+
+  .ticket-health-layout {
+    padding-right: 16px;
+  }
+
+  .ticket-card__meta {
+    grid-template-columns: 1fr;
+  }
+
+  .ticket-modal {
+    padding: 18px;
+  }
 }

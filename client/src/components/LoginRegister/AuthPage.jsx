@@ -188,6 +188,8 @@ export default function AuthPage({ defaultMode = 'login' }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('');
+  const [passkey, setPasskey] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [mouse, setMouse] = useState({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
@@ -209,10 +211,12 @@ export default function AuthPage({ defaultMode = 'login' }) {
     return () => window.removeEventListener('mousemove', onMove);
   }, []);
 
-  const headline = useMemo(
-    () => (mode === 'login' ? 'Welcome back' : 'Create your account'),
-    [mode]
-  );
+  const headline = useMemo(() => {
+    if (mode === 'login') return 'Root access login';
+    if (mode === 'register') return 'Create your account';
+    if (mode === 'rootLogin') return 'Team access login';
+    return 'Create a root access role';
+  }, [mode]);
 
   const loginMutation = useMutation({
     mutationFn: async (payload) => {
@@ -260,24 +264,94 @@ export default function AuthPage({ defaultMode = 'login' }) {
     },
   });
 
+  const rootLoginMutation = useMutation({
+    mutationFn: async (payload) => {
+      const res = await axios.post(`${API_BASE}/users/role-login`, payload);
+      return res.data;
+    },
+    onSuccess: (data) => {
+      const token = data?.token;
+      const profile = data?.user || {};
+      if (!token) { setError('Token missing from response'); return; }
+      login(token, { ...profile, name: profile.name, email: profile.email, username: profile.name });
+      navigate('/dashboard', { replace: true });
+    },
+    onError: (err) => {
+      const apiMessage = err.response?.data?.message;
+      setError(apiMessage || err.message || 'Something went wrong');
+      if (cardRef.current) {
+        cardRef.current.classList.remove('penguin-error');
+        void cardRef.current.offsetWidth;
+        cardRef.current.classList.add('penguin-error');
+      }
+    },
+  });
+
+  const rootRegisterMutation = useMutation({
+    mutationFn: async ({ name: fullName, email: mail, password: pwd, role: desiredRole, passkey: pk }) => {
+      // 1) base user registration
+      await axios.post(`${API_BASE}/users/register`, { name: fullName, email: mail, password: pwd });
+      // 2) base login to get token
+      const loginRes = await axios.post(`${API_BASE}/users/login`, { email: mail, password: pwd });
+      const baseToken = loginRes.data?.token;
+      if (!baseToken) throw new Error('Token missing after base login');
+      // 3) create role with passkey
+      await axios.post(
+        `${API_BASE}/users/create-role`,
+        { email: mail, role: desiredRole, passkey: pk },
+        { headers: { Authorization: `Bearer ${baseToken}` } },
+      );
+      // 4) role login to get token with role context
+      const roleLoginRes = await axios.post(`${API_BASE}/users/role-login`, { email: mail, passkey: pk });
+      return roleLoginRes.data;
+    },
+    onSuccess: (data) => {
+      const token = data?.token;
+      const profile = data?.user || {};
+      if (!token) { setError('Token missing from response'); return; }
+      login(token, { ...profile, name: profile.name, email: profile.email, username: profile.name });
+      navigate('/dashboard', { replace: true });
+    },
+    onError: (err) => {
+      const apiMessage = err.response?.data?.message;
+      setError(apiMessage || err.message || 'Something went wrong');
+      if (cardRef.current) {
+        cardRef.current.classList.remove('penguin-error');
+        void cardRef.current.offsetWidth;
+        cardRef.current.classList.add('penguin-error');
+      }
+    },
+  });
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
     setMessage('');
     if (mode === 'register') {
       registerMutation.mutate({ name, email, password });
-    } else {
+    } else if (mode === 'login') {
       loginMutation.mutate({ email, password });
+    } else if (mode === 'rootLogin') {
+      rootLoginMutation.mutate({ email, passkey });
+    } else if (mode === 'rootRegister') {
+      rootRegisterMutation.mutate({ name, email, password, role, passkey });
     }
   };
 
-  const loading = loginMutation.isPending || registerMutation.isPending;
+  const loading = loginMutation.isPending || registerMutation.isPending || rootLoginMutation.isPending || rootRegisterMutation.isPending;
 
   const switchMode = (nextMode) => {
     setMode(nextMode);
     setError('');
     setMessage('');
   };
+
+  const tabs = [
+    { key: 'login', label: 'Root Login' },
+    { key: 'register', label: 'Register' },
+    { key: 'rootLogin', label: 'Team Login' },
+    { key: 'rootRegister', label: 'Create Team' },
+  ];
 
   return (
     <div className="auth-shell">
@@ -290,28 +364,37 @@ export default function AuthPage({ defaultMode = 'login' }) {
       </Link>
 
       <div className="auth-card" ref={cardRef}>
-        <div className="auth-tabs">
-          <button type="button" onClick={() => switchMode('login')} className={mode === 'login' ? 'active' : ''}>
-            Login
-          </button>
-          <button type="button" onClick={() => switchMode('register')} className={mode === 'register' ? 'active' : ''}>
-            Register
-          </button>
+        <div className="auth-tabs auth-tabs--grid4">
+          {tabs.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => switchMode(t.key)}
+              className={mode === t.key ? 'active' : ''}
+            >
+              {t.label}
+            </button>
+          ))}
         </div>
 
         <div className="auth-header">
           <h2>{headline}</h2>
-          <p>{mode === 'login' ? 'Sign in to view your dashboard.' : 'Start routing revenue signals to your team.'}</p>
+          <p>
+            {mode === 'login' && 'Use your email and password to sign in with root access.'}
+            {mode === 'register' && 'Start routing revenue signals to your team.'}
+            {mode === 'rootLogin' && 'Use your passkey to log in with team access.'}
+            {mode === 'rootRegister' && 'Create a role-specific access passkey for root users.'}
+          </p>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
-          {mode === 'register' && (
+          {(mode === 'register' || mode === 'rootRegister') && (
             <div className="field">
               <label htmlFor="name">Full name</label>
               <input
                 id="name" name="name" type="text" placeholder="Priya Sharma"
                 value={name} onChange={(e) => setName(e.target.value)}
-                required={mode === 'register'}
+                required
               />
             </div>
           )}
@@ -324,28 +407,48 @@ export default function AuthPage({ defaultMode = 'login' }) {
             />
           </div>
 
-          <div className="field">
-            <label htmlFor="password">Password</label>
-            <input
-              id="password" name="password" type="password" placeholder="••••••••"
-              value={password} onChange={(e) => setPassword(e.target.value)}
-              minLength={6} required
-            />
-          </div>
+          {mode !== 'rootLogin' && (
+            <div className="field">
+              <label htmlFor="password">Password</label>
+              <input
+                id="password" name="password" type="password" placeholder="••••••••"
+                value={password} onChange={(e) => setPassword(e.target.value)}
+                minLength={6} required
+              />
+            </div>
+          )}
+
+          {(mode === 'rootLogin' || mode === 'rootRegister') && (
+            <div className="field">
+              <label htmlFor="passkey">Passkey</label>
+              <input
+                id="passkey" name="passkey" type="password" placeholder="Your role passkey"
+                value={passkey} onChange={(e) => setPasskey(e.target.value)}
+                required
+              />
+            </div>
+          )}
+
+          {mode === 'rootRegister' && (
+            <div className="field">
+              <label htmlFor="role">Role</label>
+              <input
+                id="role" name="role" type="text" placeholder="e.g., admin, owner"
+                value={role} onChange={(e) => setRole(e.target.value)}
+                required
+              />
+            </div>
+          )}
 
           {error && <div className="auth-alert error">{error}</div>}
           {message && <div className="auth-alert success">{message}</div>}
 
           <button type="submit" className="auth-submit" disabled={loading}>
-            {loading ? 'Working...' : mode === 'login' ? 'Login' : 'Register & Sign in'}
+            {loading ? 'Working...' : (mode === 'login' || mode === 'rootLogin') ? 'Sign in' : 'Register & Sign in'}
           </button>
 
           <div className="auth-switch">
-            {mode === 'login' ? (
-              <>Need an account?{' '}<button type="button" onClick={() => switchMode('register')} className="linkish">Register</button></>
-            ) : (
-              <>Already have an account?{' '}<button type="button" onClick={() => switchMode('login')} className="linkish">Login</button></>
-            )}
+            Need a different mode? Use the tabs above to switch between root login, team login, and registration.
           </div>
         </form>
       </div>

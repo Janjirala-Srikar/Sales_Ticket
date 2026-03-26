@@ -40,12 +40,12 @@ export default function Dashboard() {
           <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
 
           <main className="dash-main">
-            <header className="dash-bar">
+            {/* <header className="dash-bar">
               <div>
                 <p className="dash-kicker">TicketSignal</p>
                 <h1>{activeLink?.label}</h1>
               </div>
-            </header>
+            </header> */}
 
             <Routes>
               <Route index element={<Navigate to="health" replace />} />
