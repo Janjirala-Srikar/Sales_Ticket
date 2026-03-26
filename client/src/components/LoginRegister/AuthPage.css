@@ -67,7 +67,6 @@ body {
 /* ── Tabs ── */
 .auth-tabs {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
   background: var(--bg-subtle);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-pill);
@@ -80,6 +79,10 @@ body {
 
 .auth-tabs--grid4 {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.auth-tabs--grid3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .auth-tabs button {

@@ -1,8 +1,7 @@
-import { useMemo, useState } from 'react';
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useState } from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
-import Header from './Header';
-import { DASH_LINKS, SETTINGS_LINK } from './navItems';
+import AllTickets from './views/AllTickets';
 import AccountHealthView from './views/AccountHealthView';
 import SignalsFeedView from './views/SignalsFeedView';
 import AccountMemoryView from './views/AccountMemoryView';
@@ -11,20 +10,13 @@ import AskIntelView from './views/AskIntelView';
 import DigestView from './views/DigestView';
 import VoiceView from './views/VoiceView';
 import SettingsView from './views/SettingsView';
+import AddTeamView from './views/AddTeamView';
+import EditDetailsView from './views/EditDetailsView';
 import './Dashboard.css';
 
 export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const location = useLocation();
-
-  const activeLink = useMemo(
-    () => {
-      const all = [...DASH_LINKS, SETTINGS_LINK];
-      return all.find((link) => location.pathname.startsWith(link.path)) || DASH_LINKS[0];
-    },
-    [location.pathname]
-  );
 
   return (
     <div className="dash-shell">
@@ -37,18 +29,28 @@ export default function Dashboard() {
         />
 
         <div className="dash-content">
-          <Header sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-
           <main className="dash-main">
-            {/* <header className="dash-bar">
-              <div>
-                <p className="dash-kicker">TicketSignal</p>
-                <h1>{activeLink?.label}</h1>
-              </div>
-            </header> */}
+            {sidebarCollapsed && (
+              <button
+                type="button"
+                className="dash-mobile-toggle dash-mobile-toggle--collapsed"
+                aria-controls="sidebar"
+                aria-expanded="false"
+                onClick={() => setSidebarCollapsed(false)}
+              >
+                <span className="sr-only">Open sidebar</span>
+                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <rect x="4" y="5" width="16" height="2" />
+                  <rect x="4" y="11" width="16" height="2" />
+                  <rect x="4" y="17" width="16" height="2" />
+                </svg>
+              </button>
+            )}
+            <div className="mt-3"></div>
 
             <Routes>
-              <Route index element={<Navigate to="health" replace />} />
+              <Route index element={<Navigate to="all-tickets" replace />} />
+              <Route path="all-tickets" element={<AllTickets />} />
               <Route path="health" element={<AccountHealthView />} />
               <Route path="signals" element={<SignalsFeedView />} />
               <Route path="memory" element={<AccountMemoryView />} />
@@ -57,7 +59,9 @@ export default function Dashboard() {
               <Route path="digest" element={<DigestView />} />
               <Route path="voice" element={<VoiceView />} />
               <Route path="settings" element={<SettingsView />} />
-              <Route path="*" element={<Navigate to="health" replace />} />
+              <Route path="settings/add-team" element={<AddTeamView />} />
+              <Route path="settings/edit-details" element={<EditDetailsView />} />
+              <Route path="*" element={<Navigate to="all-tickets" replace />} />
             </Routes>
           </main>
         </div>

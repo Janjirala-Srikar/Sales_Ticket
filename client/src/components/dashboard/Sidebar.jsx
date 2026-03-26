@@ -1,17 +1,31 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { DASH_LINKS, SETTINGS_LINK } from './navItems';
+import { NavLink, useLocation } from 'react-router-dom';
+import { LuChevronDown, LuLogOut } from 'react-icons/lu';
+import { useAuth } from '../../context/AuthContext';
+import { DASH_LINKS, SETTINGS_GROUP_LINKS, SETTINGS_LINK } from './navItems';
+import SidebarLinkGroup from './SidebarLinkGroup';
 import './SidebarTheme.css';
 import './Dashboard.css';
 
 function Sidebar({ sidebarOpen, setSidebarOpen, collapsed, onToggleCollapse }) {
+  const { user, logout } = useAuth();
+  const location = useLocation();
+
+  const displayName = user?.name || user?.username || (user?.email ? user.email.split('@')[0] : 'User');
+  const role = user?.role;
+  const isRootUser = !role;
+  const settingsActive = location.pathname.startsWith(SETTINGS_LINK.path);
+
   const handleLogoClick = () => {
     if (collapsed) onToggleCollapse();
   };
 
+  const settingsLinks = isRootUser
+    ? SETTINGS_GROUP_LINKS
+    : SETTINGS_GROUP_LINKS.filter((item) => item.key !== 'add-team');
+
   return (
     <div className="min-w-fit">
-      {/* Sidebar backdrop (mobile only) */}
       <div
         className={`fixed inset-0 bg-gray-900/30 z-40 lg:hidden transition-opacity duration-200 ${sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         aria-hidden="true"
@@ -19,9 +33,9 @@ function Sidebar({ sidebarOpen, setSidebarOpen, collapsed, onToggleCollapse }) {
       />
 
       <div
-        className={`sidebar-theme sidebar-theme--white sidebar-slim ${collapsed ? 'sidebar-collapsed' : ''} flex flex-col fixed z-50 left-0 top-0 h-[100dvh] overflow-y-auto no-scrollbar w-64 shrink-0 p-4 transition-all duration-200 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-64'} lg:static lg:translate-x-0`}
+        className={`sidebar-theme sidebar-theme--white sidebar-slim ${collapsed ? 'sidebar-collapsed' : ''} flex flex-col fixed z-50 left-0 top-0 h-[100dvh] overflow-hidden no-scrollbar w-64 shrink-0 p-4 transition-all duration-200 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-64'} lg:static lg:translate-x-0`}
       >
-        <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} mb-6`}>
+        <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} mb-8`}>
           <button
             type="button"
             className="flex items-center gap-2 focus:outline-none"
@@ -58,29 +72,82 @@ function Sidebar({ sidebarOpen, setSidebarOpen, collapsed, onToggleCollapse }) {
           )}
         </div>
 
-        <nav className="sidebar-list">
-          {DASH_LINKS.map((item) => (
-            <NavLink
-              key={item.key}
-              to={item.path}
-              className={({ isActive }) => `sidebar-link ${isActive ? 'sidebar-link--active' : ''}`}
-              onClick={() => setSidebarOpen(false)}
-            >
-              <item.Icon size={20} />
-              {!collapsed && <span className="sidebar-label">{item.label}</span>}
-            </NavLink>
-          ))}
-        </nav>
+        <div className="sidebar-scroll">
+          <nav className="sidebar-list mt-2">
+            {DASH_LINKS.map((item) => (
+              <NavLink
+                key={item.key}
+                to={item.path}
+                className={({ isActive }) => `sidebar-link ${isActive ? 'sidebar-link--active' : ''}`}
+                onClick={() => setSidebarOpen(false)}
+              >
+                <item.Icon size={20} />
+                {!collapsed && <span className="sidebar-label">{item.label}</span>}
+              </NavLink>
+            ))}
 
-        <div className="sidebar-bottom">
-          <NavLink
-            to={SETTINGS_LINK.path}
-            className={({ isActive }) => `sidebar-link sidebar-link--muted ${isActive ? 'sidebar-link--active' : ''}`}
-            onClick={() => setSidebarOpen(false)}
-          >
-            <SETTINGS_LINK.Icon size={20} />
-            {!collapsed && <span className="sidebar-label">{SETTINGS_LINK.label}</span>}
-          </NavLink>
+            <SidebarLinkGroup activecondition={settingsActive}>
+              {(handleClick, open) => (
+                <div className="sidebar-group">
+                  <button
+                    type="button"
+                    className={`sidebar-link sidebar-group__toggle ${settingsActive ? 'sidebar-link--active' : ''}`}
+                    onClick={handleClick}
+                  >
+                    <SETTINGS_LINK.Icon size={20} />
+                    {!collapsed && (
+                      <span className="sidebar-group__content">
+                        <span className="sidebar-label">{SETTINGS_LINK.label}</span>
+                        <LuChevronDown
+                          size={18}
+                          className={`sidebar-group__chevron ${open ? 'sidebar-group__chevron--open' : ''}`}
+                        />
+                      </span>
+                    )}
+                  </button>
+
+                  {!collapsed && open && (
+                    <div className="sidebar-group__links">
+                      {settingsLinks.map((item) => (
+                        <NavLink
+                          key={item.key}
+                          to={item.path}
+                          className={({ isActive }) => `sidebar-sublink ${isActive ? 'sidebar-sublink--active' : ''}`}
+                          onClick={() => setSidebarOpen(false)}
+                        >
+                          <item.Icon size={16} />
+                          <span>{item.label}</span>
+                        </NavLink>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </SidebarLinkGroup>
+          </nav>
+        </div>
+
+        <div className="sidebar-bottom sidebar-account">
+          <div className="sidebar-account__card">
+            <div className="sidebar-account__avatar">{(displayName || 'U')[0]?.toUpperCase()}</div>
+            {!collapsed && (
+              <div className="sidebar-account__meta">
+                <div className="sidebar-account__name">{displayName}</div>
+                {role && <div className="sidebar-account__role">{role}</div>}
+              </div>
+            )}
+            {!collapsed && (
+              <button
+                type="button"
+                className="sidebar-account__logout"
+                onClick={logout}
+                aria-label="Logout"
+                title="Logout"
+              >
+                <LuLogOut size={18} />
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

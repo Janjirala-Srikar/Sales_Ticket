@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useMutation } from '@tanstack/react-query';
@@ -188,7 +188,6 @@ export default function AuthPage({ defaultMode = 'login' }) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [role, setRole] = useState('');
   const [passkey, setPasskey] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
@@ -214,8 +213,7 @@ export default function AuthPage({ defaultMode = 'login' }) {
   const headline = useMemo(() => {
     if (mode === 'login') return 'Root access login';
     if (mode === 'register') return 'Create your account';
-    if (mode === 'rootLogin') return 'Team access login';
-    return 'Create a root access role';
+    return 'Team access login';
   }, [mode]);
 
   const loginMutation = useMutation({
@@ -287,42 +285,6 @@ export default function AuthPage({ defaultMode = 'login' }) {
     },
   });
 
-  const rootRegisterMutation = useMutation({
-    mutationFn: async ({ name: fullName, email: mail, password: pwd, role: desiredRole, passkey: pk }) => {
-      // 1) base user registration
-      await axios.post(`${API_BASE}/users/register`, { name: fullName, email: mail, password: pwd });
-      // 2) base login to get token
-      const loginRes = await axios.post(`${API_BASE}/users/login`, { email: mail, password: pwd });
-      const baseToken = loginRes.data?.token;
-      if (!baseToken) throw new Error('Token missing after base login');
-      // 3) create role with passkey
-      await axios.post(
-        `${API_BASE}/users/create-role`,
-        { email: mail, role: desiredRole, passkey: pk },
-        { headers: { Authorization: `Bearer ${baseToken}` } },
-      );
-      // 4) role login to get token with role context
-      const roleLoginRes = await axios.post(`${API_BASE}/users/role-login`, { email: mail, passkey: pk });
-      return roleLoginRes.data;
-    },
-    onSuccess: (data) => {
-      const token = data?.token;
-      const profile = data?.user || {};
-      if (!token) { setError('Token missing from response'); return; }
-      login(token, { ...profile, name: profile.name, email: profile.email, username: profile.name });
-      navigate('/dashboard', { replace: true });
-    },
-    onError: (err) => {
-      const apiMessage = err.response?.data?.message;
-      setError(apiMessage || err.message || 'Something went wrong');
-      if (cardRef.current) {
-        cardRef.current.classList.remove('penguin-error');
-        void cardRef.current.offsetWidth;
-        cardRef.current.classList.add('penguin-error');
-      }
-    },
-  });
-
   const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
@@ -333,12 +295,10 @@ export default function AuthPage({ defaultMode = 'login' }) {
       loginMutation.mutate({ email, password });
     } else if (mode === 'rootLogin') {
       rootLoginMutation.mutate({ email, passkey });
-    } else if (mode === 'rootRegister') {
-      rootRegisterMutation.mutate({ name, email, password, role, passkey });
     }
   };
 
-  const loading = loginMutation.isPending || registerMutation.isPending || rootLoginMutation.isPending || rootRegisterMutation.isPending;
+  const loading = loginMutation.isPending || registerMutation.isPending || rootLoginMutation.isPending;
 
   const switchMode = (nextMode) => {
     setMode(nextMode);
@@ -350,7 +310,6 @@ export default function AuthPage({ defaultMode = 'login' }) {
     { key: 'login', label: 'Root Login' },
     { key: 'register', label: 'Register' },
     { key: 'rootLogin', label: 'Team Login' },
-    { key: 'rootRegister', label: 'Create Team' },
   ];
 
   return (
@@ -364,7 +323,7 @@ export default function AuthPage({ defaultMode = 'login' }) {
       </Link>
 
       <div className="auth-card" ref={cardRef}>
-        <div className="auth-tabs auth-tabs--grid4">
+        <div className="auth-tabs auth-tabs--grid3">
           {tabs.map((t) => (
             <button
               key={t.key}
@@ -383,12 +342,11 @@ export default function AuthPage({ defaultMode = 'login' }) {
             {mode === 'login' && 'Use your email and password to sign in with root access.'}
             {mode === 'register' && 'Start routing revenue signals to your team.'}
             {mode === 'rootLogin' && 'Use your passkey to log in with team access.'}
-            {mode === 'rootRegister' && 'Create a role-specific access passkey for root users.'}
           </p>
         </div>
 
         <form className="auth-form" onSubmit={handleSubmit}>
-          {(mode === 'register' || mode === 'rootRegister') && (
+          {mode === 'register' && (
             <div className="field">
               <label htmlFor="name">Full name</label>
               <input
@@ -418,23 +376,12 @@ export default function AuthPage({ defaultMode = 'login' }) {
             </div>
           )}
 
-          {(mode === 'rootLogin' || mode === 'rootRegister') && (
+          {mode === 'rootLogin' && (
             <div className="field">
               <label htmlFor="passkey">Passkey</label>
               <input
                 id="passkey" name="passkey" type="password" placeholder="Your role passkey"
                 value={passkey} onChange={(e) => setPasskey(e.target.value)}
-                required
-              />
-            </div>
-          )}
-
-          {mode === 'rootRegister' && (
-            <div className="field">
-              <label htmlFor="role">Role</label>
-              <input
-                id="role" name="role" type="text" placeholder="e.g., admin, owner"
-                value={role} onChange={(e) => setRole(e.target.value)}
                 required
               />
             </div>
