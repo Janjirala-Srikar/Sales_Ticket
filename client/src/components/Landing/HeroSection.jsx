@@ -21,14 +21,37 @@ const TICKER_ITEMS = [
 ];
 
 function DashboardPreview() {
+  const handleFrameMouseMove = (event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - rect.left) / rect.width) * 100;
+    const y = ((event.clientY - rect.top) / rect.height) * 100;
+    event.currentTarget.style.setProperty('--frame-cursor-x', `${Math.max(0, Math.min(100, x))}%`);
+    event.currentTarget.style.setProperty('--frame-cursor-y', `${Math.max(0, Math.min(100, y))}%`);
+  };
+
+  const handleFrameMouseLeave = (event) => {
+    event.currentTarget.style.setProperty('--frame-cursor-x', '50%');
+    event.currentTarget.style.setProperty('--frame-cursor-y', '50%');
+  };
+
   return (
-    <div className="hero-dashboard-frame">
+    <div
+      className="hero-dashboard-frame"
+      onMouseMove={handleFrameMouseMove}
+      onMouseLeave={handleFrameMouseLeave}
+    >
       <div className="dashboard-bar">
-        <span className="db-dot" style={{ background: '#EF4444' }} />
-        <span className="db-dot" style={{ background: '#F59E0B' }} />
-        <span className="db-dot" style={{ background: '#10B981' }} />
-        <span style={{ flex: 1, textAlign: 'center', fontFamily: 'DM Mono, monospace', fontSize: 11, color: 'var(--text-muted)' }}>
+        <div className="db-window-controls" aria-label="window controls">
+          <button type="button" className="db-dot db-dot-red" aria-label="Close" />
+          <button type="button" className="db-dot db-dot-amber" aria-label="Minimize" />
+          <button type="button" className="db-dot db-dot-green" aria-label="Maximize" />
+        </div>
+        <span className="db-bar-title">
           ticketsignal - revenue-signals
+        </span>
+        <span className="db-live-pill">
+          <span className="db-live-dot" />
+          Live
         </span>
       </div>
       <div className="dashboard-inner">
@@ -37,18 +60,21 @@ function DashboardPreview() {
           <div className="db-card-val">47</div>
           <div className="db-card-sub">+12 from yesterday</div>
           <div className="db-card-tag tag-green">^ 34%</div>
+          <div className="db-card-meter" style={{ '--fill': '72%' }} />
         </div>
         <div className="db-card">
           <div className="db-card-label">Revenue at Risk</div>
           <div className="db-card-val">$82k</div>
           <div className="db-card-sub">5 accounts flagged</div>
           <div className="db-card-tag tag-red">Churn risk</div>
+          <div className="db-card-meter" style={{ '--fill': '45%' }} />
         </div>
         <div className="db-card">
           <div className="db-card-label">Expansion Pipeline</div>
           <div className="db-card-val">$214k</div>
           <div className="db-card-sub">11 opportunities</div>
           <div className="db-card-tag tag-blue">Active</div>
+          <div className="db-card-meter" style={{ '--fill': '84%' }} />
         </div>
         <div className="db-card db-wide">
           <div className="db-card-label">Recent Signals</div>
@@ -65,12 +91,20 @@ function DashboardPreview() {
               </div>
             ))}
           </div>
+          <div className="db-sparkline" aria-hidden="true">
+            <span />
+            <span />
+            <span />
+            <span />
+            <span />
+          </div>
         </div>
         <div className="db-card">
           <div className="db-card-label">Feature Requests</div>
           <div className="db-card-val">23</div>
           <div className="db-card-sub">Across 14 accounts</div>
           <div className="db-card-tag tag-amber">This week</div>
+          <div className="db-card-meter" style={{ '--fill': '61%' }} />
         </div>
       </div>
     </div>
@@ -103,11 +137,9 @@ export default function HeroSection() {
       </nav>
 
       <section className="hero">
+        <div className="hero-aurora" />
         <div className="hero-glow" />
-        <div className="hero-eyebrow">
-          <span className="hero-eyebrow-dot" />
-          Revenue Intelligence Platform
-        </div>
+
         <h1>Turn every support ticket into <em>revenue intelligence.</em></h1>
         <p className="hero-sub">
           Capture churn risks, expansion signals, and competitor mentions straight from support threads, then route each to the owner in seconds.

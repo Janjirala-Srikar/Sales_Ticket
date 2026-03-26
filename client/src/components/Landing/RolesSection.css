@@ -1,52 +1,145 @@
-/* ── Roles ── */
+/* ─── RolesSection.css ──────────────────────────────────────────────────────── */
+
+/* Palette
+   --bg-deep  : #07080f   deepest background
+   --bg-card  : #0e1120   section surface
+   --accent   : #3a86ff   primary blue accent
+   --accent2  : #5e60ce   purple accent
+   --text-hi  : #f0f4ff   headings
+   --text-mid : #8b99c4   body / muted
+   --border   : rgba(255,255,255,0.07)
+*/
+
+@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
+
 .roles-section {
-  padding: 96px 48px;
-  background: var(--bg-subtle);
-  border-top: 1px solid var(--border-subtle);
+  --bg-deep:   #ffffff;
+  --bg-card:   #0e1120;
+  --accent:    #3a86ff;
+  --accent2:   #5e60ce;
+  --text-hi:   #1e2c55;
+  --text-mid:  #3658bb;
+  --border:    rgba(255, 255, 255, 0.07);
+
+  position: relative;
+  width: 100%;
+  background: var(--bg-deep);
+  overflow: hidden;
+
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto;
+  align-items: center;
+  gap: 0 4vw;
+  padding: 7rem 6vw 7rem;
+
+  /* Subtle radial glow behind the globe */
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 70% 60% at 70% 55%, rgba(58, 134, 255, 0.09) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 40% at 30% 40%, rgba(94, 96, 206, 0.07) 0%, transparent 60%);
+    pointer-events: none;
+  }
+}
+
+/* ─── Left column: text ─────────────────────────────────────────────────────── */
+
+.roles-header {
+  grid-column: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  z-index: 1;
 }
 
 .section-label {
-  font-family: 'DM Mono', monospace;
-  font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
-  color: var(--blue-mid); margin-bottom: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+  padding: 0.35rem 0.85rem;
+  border: 1px solid rgba(58, 134, 255, 0.28);
+  border-radius: 99px;
+  background: rgba(58, 134, 255, 0.08);
+  width: fit-content;
 }
 
-.section h2 {
-  font-family: 'DM Serif Display', serif;
-  font-size: clamp(30px, 4vw, 50px); line-height: 1.12;
-  color: var(--text-primary); margin-bottom: 16px;
+.roles-heading {
+  font-family: 'Syne', system-ui, sans-serif;
+  font-size: clamp(2rem, 3.8vw, 3.4rem);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.03em;
+  color: var(--text-hi);
+  margin: 0;
 }
 
-.roles-grid {
-  display: grid; grid-template-columns: repeat(3, 1fr);
-  gap: 16px; margin-top: 56px;
+.roles-heading-accent {
+  background: linear-gradient(90deg, var(--accent) 0%, var(--accent2) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }
-.role-card {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-default);
-  border-radius: var(--radius-xl); padding: 36px;
-  box-shadow: var(--shadow-sm);
-  transition: box-shadow 0.2s, transform 0.2s;
-}
-.role-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-3px); }
-.role-title {
-  font-family: 'DM Mono', monospace; font-size: 11px;
-  letter-spacing: 0.12em; text-transform: uppercase;
-  color: var(--blue-mid); margin-bottom: 14px;
-}
-.role-card h3  { font-family: 'DM Serif Display', serif; font-size: 22px; color: var(--text-primary); margin-bottom: 12px; }
-.role-card p   { font-size: 14px; color: var(--text-body); line-height: 1.75; margin-bottom: 18px; }
-.role-benefits { list-style: none; }
-.role-benefits li {
-  font-size: 13px; color: var(--text-body); padding: 7px 0;
-  border-bottom: 1px solid var(--border-subtle);
-  display: flex; gap: 10px;
-}
-.role-benefits li:last-child { border-bottom: none; }
-.benefit-check { color: #10B981; flex-shrink: 0; }
 
-/* ── Responsive ── */
+.roles-copy {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  font-size: clamp(0.9rem, 1.15vw, 1.05rem);
+  font-weight: 400;
+  line-height: 1.65;
+  color: var(--text-mid);
+  max-width: 38ch;
+  margin: 0;
+}
+
+/* ─── Right column: globe ───────────────────────────────────────────────────── */
+
+.roles-menu-host {
+  grid-column: 2;
+  position: relative;
+  height: 560px;
+  /* Faint card to help the globe read against the dark bg */
+  background: radial-gradient(ellipse 80% 80% at 50% 50%, rgba(255,255,255,0.025) 0%, transparent 75%);
+  border-radius: 24px;
+  z-index: 1;
+}
+
+/* ─── Responsive: stack vertically on smaller screens ───────────────────────── */
+
 @media (max-width: 900px) {
-  .roles-section { padding-left: 20px; padding-right: 20px; }
-  .roles-grid { grid-template-columns: 1fr; }
+  .roles-section {
+    grid-template-columns: 1fr;
+    padding: 5rem 6vw;
+    gap: 3rem;
+  }
+
+  .roles-header {
+    grid-column: 1;
+  }
+
+  .roles-menu-host {
+    grid-column: 1;
+    height: 420px;
+  }
+
+  .roles-copy {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 540px) {
+  .roles-menu-host {
+    height: 340px;
+  }
+
+  .roles-heading {
+    font-size: 1.85rem;
+  }
 }
