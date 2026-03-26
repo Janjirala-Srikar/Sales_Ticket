@@ -1,6 +1,13 @@
 const pool = require("../config/database"); 
 const { classifyTicket } = require("../utils/groqClassifier"); // adjust path
 
+const LEGACY_ROLE_LABEL_MAP = {
+  product_manager: "Product Manager",
+  customer_success_manager: "Customer Success Manager",
+  sales_manager: "Account Executive",
+  sales_rep: "Account Executive",
+};
+
 // ✅ POST /api/tickets
 const createTicket = async (req, res) => {
   try {
@@ -129,11 +136,20 @@ const getSignals = async (req, res) => {
       return res.status(400).json({ error: "user_id and role are required" });
     }
 
-    const [signals] = await pool.execute(
-      `SELECT * FROM ticket_signals 
-       WHERE user_id = ? AND assigned_to = ?`,
-      [user_id, role]
-    );
+    const normalizedRole = String(role).trim();
+    const legacyRole = LEGACY_ROLE_LABEL_MAP[normalizedRole];
+
+    const [signals] = legacyRole
+      ? await pool.execute(
+          `SELECT * FROM ticket_signals 
+           WHERE user_id = ? AND assigned_to IN (?, ?)`,
+          [user_id, normalizedRole, legacyRole]
+        )
+      : await pool.execute(
+          `SELECT * FROM ticket_signals 
+           WHERE user_id = ? AND assigned_to = ?`,
+          [user_id, normalizedRole]
+        );
 
     return res.status(200).json({ signals });
   } catch (err) {

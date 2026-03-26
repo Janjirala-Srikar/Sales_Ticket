@@ -93,6 +93,14 @@ Content-Type: application/json
   "email": "netflix@gmail.com",
   "passkey": "prod@123"
 }
+### Account Executive Login
+POST {{baseUrl}}/api/users/role-login
+Content-Type: application/json
+
+{
+  "email": "netflix@gmail.com",
+  "passkey": "ae12345"
+}
 
 
 ### Sales Manager Login

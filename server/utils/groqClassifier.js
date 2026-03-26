@@ -4,10 +4,10 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // Fixed role mapping per signal type
 const ROLE_MAP = {
-  expansion:          "Account Executive",
-  churn_risk:         "Customer Success Manager",
-  competitor_mention: "Account Executive",
-  feature_gap:        "Product Manager",
+  expansion:          "sales_manager",
+  churn_risk:         "customer_success_manager",
+  competitor_mention: "sales_manager",
+  feature_gap:        "product_manager",
 };
 
 async function classifyTicket(subject, description) {
