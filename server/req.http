@@ -123,3 +123,9 @@ Content-Type: application/json
   "email": "netflix@gmail.com",
   "passkey": "rep@123"
 }
+
+
+
+### Get all tickets
+GET http://localhost:5000/api/tickets/30001
+Content-Type: application/json

@@ -49,14 +49,7 @@ app.listen(PORT, async () => {
   }
 });
 
-// ─── Auth ───────────────────────────────────────────────────
-app.post("/api/register", userController.register);
-app.post("/api/login",    userController.login);
-
-// ─── Email ──────────────────────────────────────────────────
-app.post("/api/send-mail", emailController.sendMailHandler);
-
 // ─── Tickets ────────────────────────────────────────────────
 app.post("/api/tickets",     ticketController.createTicket);
-app.get ("/api/tickets",     ticketController.getAllTickets);
-app.get ("/api/tickets/:id", ticketController.getTicketById);
+app.get ("/api/tickets/:userId",     ticketController.getAllTicketsofUser);
+
