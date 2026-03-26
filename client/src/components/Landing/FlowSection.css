@@ -1,49 +1,164 @@
-/* ── Flow ── */
+/* ── Outer scroll runway ── */
 .flow-section {
-  padding: 96px 48px;
+  height: calc(100vh * 6);
+  position: relative;
   background: var(--bg-subtle);
   border-top: 1px solid var(--border-subtle);
   border-bottom: 1px solid var(--border-subtle);
 }
+
+/* ── Sticky panel ── */
+.flow-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 48px;
+  overflow: hidden;
+}
+
+.flow-sticky h2 {
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(30px, 4vw, 50px);
+  line-height: 1.12;
+  color: var(--text-primary);
+  margin-bottom: 16px;
+}
+
+.flow-subtitle {
+  color: var(--text-body);
+  max-width: 500px;
+  font-size: 15px;
+  margin-bottom: 56px;
+}
+
+/* ── Timeline track ── */
+.flow-track {
+  position: relative;
+  padding: 0 27px; /* centers the line on the number circles */
+}
+
+/* Dim grey baseline — always full width */
+.flow-line-bg {
+  position: absolute;
+  top: 27px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--border-subtle);
+  z-index: 0;
+}
+
+/* Solid bright fill — grows with scroll */
+.flow-line-fill {
+  position: absolute;
+  top: 27px;
+  left: 0;
+  width: 0%;
+  height: 2px;
+  background: #51b9ff;
+  box-shadow: none;
+  z-index: 1;
+  transition: width 0.06s linear;
+}
+
+/* Glowing halo on top of fill */
+.flow-line-glow {
+  display: none;
+}
+
+/* ── Steps row ── */
 .flow-steps {
-  display: flex; gap: 0; margin-top: 56px; position: relative;
+  display: flex;
+  position: relative;
+  z-index: 3;
 }
-.flow-steps::before {
-  content: '';
-  position: absolute; top: 27px; left: 0; right: 0; height: 1px;
-  background: linear-gradient(90deg, transparent, var(--blue-muted), transparent);
-}
+
 .flow-step {
-  flex: 1; padding: 0 24px;
+  flex: 1;
+  padding: 0 24px;
   border-right: 1px solid var(--border-subtle);
+
+  /* Start hidden; JS drives reveal */
+  opacity: 0;
+  transform: translateX(32px);
+  clip-path: inset(0 100% 0 0);
+
+  /* Smooth transition — keep short so it feels responsive */
+  transition:
+    clip-path  0.25s ease,
+    transform  0.25s ease,
+    opacity    0.25s ease;
+
+  will-change: clip-path, transform, opacity;
 }
-.flow-step:last-child { border-right: none; }
+
+.flow-step:first-child { padding-left: 0; }
+.flow-step:last-child  { border-right: none; }
+
+/* ── Step number circle ── */
 .step-num {
   width: 54px; height: 54px;
-  background: var(--bg-surface); border: 1px solid var(--border-default);
-  border-radius: 50%; display: flex; align-items: center; justify-content: center;
-  font-family: 'DM Mono', monospace; font-size: 13px; color: var(--blue-primary);
-  margin-bottom: 22px; position: relative; z-index: 1;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-default);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--blue-primary);
+  margin-bottom: 22px;
   box-shadow: var(--shadow-sm);
+  opacity: 0.4;           /* starts dim; JS brightens it */
+  transition: opacity 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
-.flow-step h3 { font-size: 16px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
-.flow-step p  { font-size: 13px; color: var(--text-body); line-height: 1.75; }
 
+/* Fully active state — glows */
+.step-num--active {
+  opacity: 1 !important;
+  border-color: var(--blue-primary);
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--blue-primary) 15%, transparent),
+    var(--shadow-sm);
+}
+
+.flow-step h3 {
+  font-size: 16px; font-weight: 600;
+  color: var(--text-primary); margin-bottom: 8px;
+}
+
+.flow-step p {
+  font-size: 13px; color: var(--text-body); line-height: 1.75;
+}
+
+/* ── Section label ── */
 .section-label {
   font-family: 'DM Mono', monospace;
   font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase;
   color: var(--blue-mid); margin-bottom: 14px;
 }
-.section h2 {
-  font-family: 'DM Serif Display', serif;
-  font-size: clamp(30px, 4vw, 50px); line-height: 1.12;
-  color: var(--text-primary); margin-bottom: 16px;
-}
 
 /* ── Responsive ── */
 @media (max-width: 900px) {
-  .flow-section { padding-left: 20px; padding-right: 20px; }
+  .flow-section  { height: calc(100vh * 7); }
+  .flow-sticky   { padding: 0 20px; justify-content: flex-start; padding-top: 64px; }
+
+  .flow-line-bg,
+  .flow-line-fill,
+  .flow-line-glow { display: none; }
+
   .flow-steps { flex-direction: column; }
-  .flow-steps::before { display: none; }
-  .flow-step { border-right: none; border-bottom: 1px solid var(--border-subtle); padding: 20px 0; }
+
+  .flow-step {
+    border-right: none;
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 20px 0;
+    /* On mobile just fade in, no clip animation */
+    clip-path: none;
+    transform: none;
+    opacity: 1;
+  }
+
+  .step-num { opacity: 1; }
 }
