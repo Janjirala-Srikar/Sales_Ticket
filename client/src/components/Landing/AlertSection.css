@@ -1,5 +1,5 @@
 .alert-section {
-  padding: 96px 48px;
+  padding: 6rem var(--landing-section-pad-x) 6rem;
 }
 
 .alert-section .section-label {
@@ -8,34 +8,35 @@
   letter-spacing: 0.2em;
   text-transform: uppercase;
   color: var(--blue-mid);
-  margin-bottom: 14px;
+  margin-bottom: 1.5rem;
 }
 
 .output-lead {
-  max-width: 680px;
+  max-width: 700px;
 }
 
 .output-lead h3 {
   margin: 0;
   font-family: 'DM Serif Display', serif;
-  font-size: clamp(30px, 4vw, 46px);
-  line-height: 1.14;
+  font-size: clamp(30px, 4vw, 48px);
+  line-height: 1.12;
+  letter-spacing: -0.01em;
   color: var(--text-primary);
 }
 
 .output-lead p {
-  margin: 14px 0 0;
+  margin: 1.25rem 0 0;
   font-size: 15px;
-  line-height: 1.78;
+  line-height: 1.8;
   color: var(--text-body);
-  max-width: 620px;
+  max-width: 600px;
 }
 
 .alert-layout {
-  margin-top: 57px;
+  margin-top: 4rem;
   display: grid;
   grid-template-columns: minmax(0, 1.02fr) minmax(0, 0.98fr);
-  gap: 6rem;
+  gap: 4rem;
   align-items: stretch;
 }
 
@@ -68,13 +69,13 @@
 }
 
 .slack-header {
-  padding: 14px 18px;
+  padding: 1rem 1.25rem;
   border-bottom: 1px solid rgba(112, 155, 215, 0.2);
   background: linear-gradient(180deg, rgba(15, 31, 66, 0.88), rgba(10, 23, 50, 0.82));
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 1rem;
   position: relative;
   z-index: 1;
 }
@@ -82,7 +83,7 @@
 .slack-channel {
   display: inline-flex;
   align-items: center;
-  gap: 7px;
+  gap: 0.5rem;
   font-size: 13px;
   font-weight: 600;
   color: #dbeaff;
@@ -114,20 +115,23 @@
 }
 
 .slack-body {
-  padding: 18px;
+  padding: 1.5rem;
   position: relative;
   z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .slack-msg {
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 12px;
+  gap: 1rem;
 }
 
 .slack-avatar {
-  width: 34px;
-  height: 34px;
+  width: 2.25rem;
+  height: 2.25rem;
   border-radius: 8px;
   background: linear-gradient(135deg, #2f7fca, #19599b);
   color: #fff;
@@ -138,12 +142,13 @@
   justify-content: center;
   border: 1px solid rgba(147, 198, 250, 0.45);
   box-shadow: 0 0 0 2px rgba(31, 80, 141, 0.35);
+  flex-shrink: 0;
 }
 
 .slack-msg-top {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: 0.75rem;
   flex-wrap: wrap;
 }
 
@@ -159,9 +164,9 @@
 }
 
 .slack-text {
-  margin: 6px 0 0;
+  margin: 0.25rem 0 0;
   font-size: 13px;
-  line-height: 1.62;
+  line-height: 1.65;
   color: #bdd2ec;
 }
 
@@ -170,11 +175,11 @@
 }
 
 .slack-brief {
-  margin-top: 5rem;
+  margin-top: 1rem;
   border: 1px solid rgba(92, 142, 206, 0.38);
   border-radius: var(--radius-lg);
   background: linear-gradient(180deg, rgba(19, 36, 72, 0.86), rgba(14, 29, 61, 0.85));
-  padding: 13px;
+  padding: 1.25rem;
   box-shadow: inset 0 0 0 1px rgba(143, 193, 247, 0.08);
 }
 
@@ -186,17 +191,17 @@
 }
 
 .brief-grid {
-  margin-top: 12px;
+  margin-top: 1rem;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 0.75rem;
 }
 
 .brief-cell {
   border: 1px solid rgba(94, 136, 195, 0.33);
   background: rgba(22, 44, 86, 0.64);
   border-radius: 10px;
-  padding: 9px 10px;
+  padding: 0.875rem;
 }
 
 .brief-cell label {
@@ -206,14 +211,15 @@
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: #89a7cc;
+  margin-bottom: 0.35rem;
 }
 
 .brief-cell span {
   display: block;
-  margin-top: 4px;
   color: #e8f1fd;
   font-size: 12px;
   font-weight: 600;
+  line-height: 1.4;
 }
 
 .alert-copy {
@@ -257,12 +263,12 @@
 
 @media (max-width: 900px) {
   .alert-section {
-    padding-left: 20px;
-    padding-right: 20px;
+    padding: 5rem var(--landing-section-pad-x-mobile);
   }
 
   .alert-layout {
     grid-template-columns: 1fr;
+    gap: 3rem;
   }
 
   .alert-copy {
@@ -272,5 +278,37 @@
   .alert-copy .menu__item-link {
     font-size: clamp(11px, 2.9vw, 13px);
     padding: 0 14px;
+  }
+}
+
+@media (max-width: 640px) {
+  .alert-section {
+    padding: 3.5rem var(--landing-section-pad-x-mobile);
+  }
+
+  .output-lead h3 {
+    font-size: clamp(24px, 5vw, 30px);
+  }
+
+  .output-lead p {
+    font-size: 14px;
+  }
+
+  .alert-layout {
+    gap: 2rem;
+  }
+
+  .slack-body {
+    padding: 1rem;
+    gap: 1rem;
+  }
+
+  .slack-brief {
+    margin-top: 1rem;
+    padding: 1rem;
+  }
+
+  .brief-grid {
+    gap: 0.5rem;
   }
 }

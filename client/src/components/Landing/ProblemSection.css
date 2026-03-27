@@ -1,5 +1,5 @@
 .problem-section {
-  padding: 96px 48px;
+  padding: 66px var(--landing-section-pad-x);
 }
 
 .problem-section .section-label {
@@ -55,7 +55,7 @@
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg);
   padding: 18px;
-  margin-bottom: 12px;
+  margin-bottom: 19px;
   position: relative;
   box-shadow: var(--shadow-sm);
   transition: box-shadow 0.2s;
@@ -71,7 +71,7 @@
   font-family: 'DM Mono', monospace;
   font-size: 11px;
   color: var(--text-muted);
-  margin-bottom: 10px;
+  margin-bottom: 13px;
 }
 
 .ticket-text {
@@ -131,8 +131,8 @@
 
 @media (max-width: 900px) {
   .problem-section {
-    padding-left: 20px;
-    padding-right: 20px;
+    padding-left: var(--landing-section-pad-x-mobile);
+    padding-right: var(--landing-section-pad-x-mobile);
   }
 
   .gap-grid {

@@ -6,6 +6,7 @@ import FlowSection from './components/Landing/FlowSection';
 import AlertSection from './components/Landing/AlertSection';
 import RolesSection from './components/Landing/RolesSection';
 import StatsSection from './components/Landing/StatsSection';
+import PricingSection from './components/Landing/PricingSection';
 import CtaFooter from './components/Landing/CtaFooter';
 
 export default function LandingPage() {
@@ -18,6 +19,7 @@ export default function LandingPage() {
       <AlertSection />
       <RolesSection />
       <StatsSection />
+      <PricingSection />
       <CtaFooter />
     </>
   );

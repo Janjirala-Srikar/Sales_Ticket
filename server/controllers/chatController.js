@@ -1,11 +1,12 @@
 const pool = require("../config/database");
 const { generateEmbedding, cosineSimilarity } = require("../utils/embedding");
 const Groq = require("groq-sdk");
+const { v4: uuidv4 } = require("uuid");
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
 // ==========================================
-// HELPER: Safe JSON parse (MySQL2 auto-parses JSON columns)
+// HELPER: Safe JSON parse
 // ==========================================
 function safeParse(value) {
   if (typeof value === "string") {
@@ -21,7 +22,7 @@ function safeParse(value) {
 // ==========================================
 // HELPER: Store conversation into chat_embeddings
 // ==========================================
-async function storeConversationEmbedding(user_id, account_id, userMessage, assistantReply, role) {
+async function storeConversationEmbedding(user_id, account_id, userMessage, assistantReply, role, session_id) {
   try {
     const embedding = await generateEmbedding(
       `User: ${userMessage}\nAssistant: ${assistantReply}`
@@ -31,8 +32,8 @@ async function storeConversationEmbedding(user_id, account_id, userMessage, assi
 
     await pool.execute(
       `INSERT INTO chat_embeddings 
-       (user_id, account_id, type, content, embedding, metadata)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+       (user_id, account_id, type, content, embedding, metadata, session_id)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         user_id,
         account_id,
@@ -40,24 +41,48 @@ async function storeConversationEmbedding(user_id, account_id, userMessage, assi
         JSON.stringify({ user_message: userMessage, assistant_reply: assistantReply }),
         JSON.stringify(embedding),
         JSON.stringify({ role, timestamp: new Date().toISOString() }),
+        session_id,   // 👈 tag with session
       ]
     );
 
-    console.log("💬 Stored in chat_embeddings");
+    console.log("💬 Stored in chat_embeddings | session:", session_id);
   } catch (err) {
     console.error("❌ Failed to store chat embedding:", err.message);
   }
 }
 
 // ==========================================
+// START SESSION — call this when chat opens
+// ==========================================
+const startSession = async (req, res) => {
+  try {
+    const { user_id } = req.body;
+
+    if (!user_id) {
+      return res.status(400).json({ error: "user_id is required" });
+    }
+
+    const session_id = uuidv4();   // 👈 generate fresh session ID
+
+    console.log("🆕 New session started:", session_id);
+
+    return res.json({ session_id });
+
+  } catch (err) {
+    console.error("❌ startSession error:", err.message);
+    return res.status(500).json({ error: err.message });
+  }
+};
+
+// ==========================================
 // MAIN CHAT HANDLER
 // ==========================================
 const chat = async (req, res) => {
   try {
-    const { user_id, role, message } = req.body;
+    const { user_id, role, message, session_id } = req.body;
 
-    if (!user_id || !role || !message) {
-      return res.status(400).json({ error: "user_id, role and message are required" });
+    if (!user_id || !role || !message || !session_id) {
+      return res.status(400).json({ error: "user_id, role, message and session_id are required" });
     }
 
     // 1. Get account_id
@@ -76,6 +101,7 @@ const chat = async (req, res) => {
     const queryEmbedding = await generateEmbedding(message);
 
     // 3. Fetch from BOTH tables in parallel
+    //    chat_embeddings → ONLY current session 👈 key fix
     const [[ticketRows], [chatRows]] = await Promise.all([
       pool.execute(
         `SELECT *, 'ticket' AS source FROM embeddings WHERE account_id = ?`,
@@ -83,8 +109,9 @@ const chat = async (req, res) => {
       ),
       pool.execute(
         `SELECT *, 'conversation' AS source FROM chat_embeddings 
-         WHERE user_id = ? ORDER BY created_at DESC LIMIT 50`,
-        [user_id]
+         WHERE user_id = ? AND session_id = ?
+         ORDER BY created_at DESC LIMIT 50`,
+        [user_id, session_id]   // 👈 filter by session_id
       ),
     ]);
 
@@ -93,7 +120,7 @@ const chat = async (req, res) => {
     // 4. Combine all rows
     const allRows = [...ticketRows, ...chatRows];
 
-    // 5. Score ALL together (safe parse for both string and object)
+    // 5. Score ALL together
     const scored = allRows.map((row) => ({
       ...row,
       score: cosineSimilarity(
@@ -142,14 +169,14 @@ Assigned To: ${c.assigned_to || "N/A"}
       {
         role: "system",
         content: `You are a CRM assistant with semantic memory.
-- Use PAST CONVERSATION CONTEXT to recall what the user told you earlier (name, preferences, etc).
+- Use PAST CONVERSATION CONTEXT to recall what the user told you in THIS session.
 - Use TICKET CONTEXT to answer ticket related questions.
 - Always prioritize what the user told you directly over ticket data.
 - Be concise and helpful.
 
 User Role: ${role}
 
-PAST CONVERSATION CONTEXT:
+PAST CONVERSATION CONTEXT (current session only):
 ${conversationContext}
 
 TICKET CONTEXT:
@@ -167,11 +194,12 @@ ${ticketContext}`,
 
     const reply = completion.choices[0].message.content;
 
-    // 11. Store this turn into chat_embeddings (non-blocking)
-    storeConversationEmbedding(user_id, account_id, message, reply, role);
+    // 11. Store this turn (non-blocking)
+    storeConversationEmbedding(user_id, account_id, message, reply, role, session_id);
 
     return res.json({
       reply,
+      session_id,
       sources: {
         tickets: topTickets.map((r) => r.ticket_id),
         conversations: topConversations.length,
@@ -185,20 +213,28 @@ ${ticketContext}`,
 };
 
 // ==========================================
-// CLEAR chat history
+// CLEAR chat history for a session
 // ==========================================
 const clearChat = async (req, res) => {
   try {
-    const { user_id } = req.body;
+    const { user_id, session_id } = req.body;
 
     if (!user_id) {
       return res.status(400).json({ error: "user_id is required" });
     }
 
-    await pool.execute(
-      `DELETE FROM chat_embeddings WHERE user_id = ?`,
-      [user_id]
-    );
+    // Clear specific session or all sessions
+    if (session_id) {
+      await pool.execute(
+        `DELETE FROM chat_embeddings WHERE user_id = ? AND session_id = ?`,
+        [user_id, session_id]
+      );
+    } else {
+      await pool.execute(
+        `DELETE FROM chat_embeddings WHERE user_id = ?`,
+        [user_id]
+      );
+    }
 
     return res.json({ message: "Chat history cleared" });
 
@@ -208,4 +244,4 @@ const clearChat = async (req, res) => {
   }
 };
 
-module.exports = { chat, clearChat };
+module.exports = { chat, startSession, clearChat };

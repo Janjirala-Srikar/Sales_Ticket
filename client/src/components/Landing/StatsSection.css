@@ -1,6 +1,6 @@
 /* ── Section shell ── */
 .section { 
-  padding: 96px 48px; 
+  padding: 96px var(--landing-section-pad-x); 
   background: var(--bg-page);
 }
 
@@ -8,10 +8,9 @@
 .stats-section-container {
   display: grid;
   grid-template-columns: 1fr 1.2fr;
-  gap: 100px;
+  gap:100px;
   align-items: center;
-  max-width: 1400px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .stats-content-left {
@@ -21,7 +20,7 @@
 }
 
 .stats-title {
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: 'DM Serif Display', serif;
   font-size: 52px;
   font-weight: 700;
   color: var(--text-primary);
@@ -69,6 +68,7 @@
 .stats-content-right {
   display: flex;
   margin-left: 30rem;
+  margin-bottom: 5rem;
   align-items: center;
   justify-content: center;
   min-height: 600px;
@@ -87,5 +87,5 @@
 }
 
 @media (max-width: 900px) {
-  .section { padding-left: 20px; padding-right: 20px; }
+  .section { padding-left: var(--landing-section-pad-x-mobile); padding-right: var(--landing-section-pad-x-mobile); }
 }

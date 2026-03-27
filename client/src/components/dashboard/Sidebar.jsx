@@ -7,6 +7,14 @@ import SidebarLinkGroup from './SidebarLinkGroup';
 import './SidebarTheme.css';
 import './Dashboard.css';
 
+function formatRoleLabel(value) {
+  if (!value) return '';
+  return String(value)
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
 function Sidebar({ sidebarOpen, setSidebarOpen, collapsed, onToggleCollapse }) {
   const { user, logout } = useAuth();
   const location = useLocation();
@@ -133,7 +141,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, collapsed, onToggleCollapse }) {
             {!collapsed && (
               <div className="sidebar-account__meta">
                 <div className="sidebar-account__name">{displayName}</div>
-                {role && <div className="sidebar-account__role">{role}</div>}
+                {role && <div className="sidebar-account__role">{formatRoleLabel(role)}</div>}
               </div>
             )}
             {!collapsed && (
