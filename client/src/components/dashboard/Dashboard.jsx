@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Sidebar from './Sidebar';
+import ChatbotWidget from './ChatbotWidget';
 import AllTickets from './views/AllTickets';
 import AccountHealthView from './views/AccountHealthView';
 import SignalsFeedView from './views/SignalsFeedView';
@@ -66,6 +67,7 @@ export default function Dashboard() {
           </main>
         </div>
       </div>
+      <ChatbotWidget />
     </div>
   );
 }

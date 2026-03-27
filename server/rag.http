@@ -1,0 +1,124 @@
+### ============================================
+### RAG CHAT AGENT - FULL TEST SUITE
+### ============================================
+
+@baseUrl = http://localhost:5000
+@userId = 30001
+@role = Account Executive
+
+### -----------------------------------------------
+### TEST 1: Simple intro — no history yet
+### -----------------------------------------------
+POST {{baseUrl}}/api/chat
+Content-Type: application/json
+
+{
+  "user_id": "{{userId}}",
+  "role": "{{role}}",
+  "message": "My name is Ashish not srikar"
+}
+
+###
+
+### -----------------------------------------------
+### TEST 2: Memory check — should recall name
+### (run AFTER test 1 so chat_embeddings has data)
+### -----------------------------------------------
+POST {{baseUrl}}/api/chat
+Content-Type: application/json
+
+{
+  "user_id": "{{userId}}",
+  "role": "{{role}}",
+  "message": "What is my name?"
+}
+
+###
+
+### -----------------------------------------------
+### TEST 3: Store more context
+### -----------------------------------------------
+POST {{baseUrl}}/api/chat
+Content-Type: application/json
+
+{
+  "user_id": "{{userId}}",
+  "role": "{{role}}",
+  "message": "I am looking after enterprise accounts in the south region"
+}
+
+###
+
+### -----------------------------------------------
+### TEST 4: Recall stored context
+### -----------------------------------------------
+POST {{baseUrl}}/api/chat
+Content-Type: application/json
+
+{
+  "user_id": "{{userId}}",
+  "role": "{{role}}",
+  "message": "Which region am I responsible for?"
+}
+
+###
+
+### -----------------------------------------------
+### TEST 5: RAG — ticket based query
+### (needs ticket embeddings in embeddings table)
+### -----------------------------------------------
+POST {{baseUrl}}/api/chat
+Content-Type: application/json
+
+{
+  "user_id": "{{userId}}",
+  "role": "{{role}}",
+  "message": "What are my open tickets?"
+}
+
+###
+
+### -----------------------------------------------
+### TEST 6: RAG — signal specific query
+### -----------------------------------------------
+POST {{baseUrl}}/api/chat
+Content-Type: application/json
+
+{
+  "user_id": "{{userId}}",
+  "role": "{{role}}",
+  "message": "Do I have any churn risk signals?"
+}
+
+###
+
+### -----------------------------------------------
+### TEST 7: RAG — billing related
+### -----------------------------------------------
+POST {{baseUrl}}/api/chat
+Content-Type: application/json
+
+{
+  "user_id": "{{userId}}",
+  "role": "{{role}}",
+  "message": "Summarize all billing related tickets"
+}
+
+###
+
+### -----------------------------------------------
+### TEST 8: RAG + Memory combined
+### (asks about tickets AND recalls user context)
+### -----------------------------------------------
+POST {{baseUrl}}/api/chat
+Content-Type: application/json
+
+{
+  "user_id": "{{userId}}",
+  "role": "{{role}}",
+  "message": "Which of my tickets are from the south region accounts?"
+}
+
+###
+
+### ------------------------
