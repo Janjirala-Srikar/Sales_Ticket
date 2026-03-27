@@ -137,9 +137,11 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 16px 16px 14px;
-  border-bottom: 1px solid var(--border-subtle);
-  background: var(--bg-surface);
+  margin: 14px 14px 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  background: var(--bg-subtle);
 }
 
 .chatbot-panel__identity {
@@ -149,19 +151,19 @@ body {
 }
 
 .chatbot-panel__avatar {
-  width: 40px;
-  height: 40px;
+  width: 34px;
+  height: 34px;
   display: grid;
   place-items: center;
-  border-radius: 12px;
+  border-radius: var(--radius-pill);
   background: var(--blue-primary);
   color: var(--text-on-blue);
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .chatbot-panel__eyebrow {
   margin: 0 0 4px;
-  color: var(--text-muted);
+  color: var(--text-link);
   font-family: 'DM Mono', monospace;
   font-size: 10px;
   text-transform: uppercase;
@@ -193,12 +195,12 @@ body {
 }
 
 .chatbot-panel__close {
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   display: inline-grid;
   place-items: center;
   border: 1px solid var(--border-subtle);
-  border-radius: 10px;
+  border-radius: var(--radius-pill);
   background: var(--bg-surface);
   color: var(--text-body);
   font-size: 16px;
@@ -212,7 +214,7 @@ body {
   padding: 14px 16px;
   max-height: 340px;
   overflow-y: auto;
-  background: var(--bg-page);
+  background: var(--bg-surface);
 }
 
 .chatbot-day-divider {
@@ -361,7 +363,6 @@ body {
   display: grid;
   gap: 10px;
   padding: 14px 16px 16px;
-  border-top: 1px solid var(--border-subtle);
   background: var(--bg-surface);
 }
 
@@ -370,10 +371,10 @@ body {
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: end;
   gap: 8px;
-  padding: 8px;
+  padding: 6px 6px 6px 12px;
   border: 1px solid var(--input-border);
-  border-radius: 16px;
-  background: var(--bg-surface);
+  border-radius: var(--radius-pill);
+  background: var(--bg-subtle);
 }
 
 .chatbot-composer__shell:focus-within {
@@ -383,13 +384,13 @@ body {
 
 .chatbot-composer__input {
   width: 100%;
-  min-height: 40px;
+  min-height: 36px;
   max-height: 120px;
   resize: none;
   border: 0;
   background: transparent;
   color: var(--input-text);
-  padding: 8px 10px;
+  padding: 8px 4px;
   font: inherit;
 }
 
@@ -414,16 +415,16 @@ body {
 }
 
 .chatbot-composer__send {
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   display: inline-grid;
   place-items: center;
   border: 0;
-  border-radius: 12px;
+  border-radius: var(--radius-pill);
   padding: 0;
   background: var(--btn-primary-bg);
   color: var(--btn-primary-text);
-  font-size: 15px;
+  font-size: 14px;
 }
 
 .chatbot-composer__send:disabled {

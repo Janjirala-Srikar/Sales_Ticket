@@ -10,13 +10,6 @@ function formatRoleLabel(value) {
     .join(' ');
 }
 
-function formatTime(value) {
-  return new Intl.DateTimeFormat('en-IN', {
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(value);
-}
-
 function createMessage(role, text, extra = {}) {
   return {
     id: `${role}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -135,11 +128,6 @@ export default function ChatbotWidget() {
     await submitMessage(draft);
   };
 
-  const suggestionPrompts = [
-    'Summarize today\'s churn risks',
-    'What are my open tickets?',
-  ];
-
   return (
     <div className="chatbot-widget">
       {open && (
@@ -150,11 +138,8 @@ export default function ChatbotWidget() {
                 <LuBot />
               </div>
               <div>
+                {/* <p className="chatbot-panel__eyebrow">Copilot</p> */}
                 <h2 className="chatbot-panel__title">Sales Ticket Copilot</h2>
-                <p className="chatbot-panel__status">
-                  <span className="chatbot-panel__status-dot" />
-                  Ready to help
-                </p>
               </div>
             </div>
             <button
@@ -168,9 +153,7 @@ export default function ChatbotWidget() {
           </div>
 
           <div className="chatbot-thread" ref={threadRef}>
-            <div className="chatbot-day-divider">
-              <span>{displayRole}</span>
-            </div>
+            
 
             {messages.map((message) => {
               const isAssistant = message.role === 'assistant';
@@ -180,19 +163,14 @@ export default function ChatbotWidget() {
                   key={message.id}
                   className={`chatbot-message-row ${isAssistant ? 'chatbot-message-row--assistant' : 'chatbot-message-row--user'}`}
                 >
-                  {isAssistant && (
-                    <div className="chatbot-message-avatar">
-                      <LuSparkles />
-                    </div>
-                  )}
                   <div className={`chatbot-message-stack ${isAssistant ? '' : 'chatbot-message-stack--user'}`}>
                     <div className={`chatbot-message ${isAssistant ? 'chatbot-message--assistant' : 'chatbot-message--user'}`}>
                       <p>{message.text}</p>
                     </div>
-                    <div className={`chatbot-message-meta ${isAssistant ? '' : 'chatbot-message-meta--user'}`}>
+                    {/* <div className={`chatbot-message-meta ${isAssistant ? '' : 'chatbot-message-meta--user'}`}>
                       <span className="chatbot-message__time">{formatTime(message.createdAt)}</span>
                       {message.meta && <span className="chatbot-message__source">{message.meta}</span>}
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               );
@@ -213,19 +191,7 @@ export default function ChatbotWidget() {
               </div>
             )}
 
-            <div className="chatbot-suggestions">
-              {suggestionPrompts.map((prompt) => (
-                <button
-                  key={prompt}
-                  type="button"
-                  className="chatbot-suggestion"
-                  onClick={() => submitMessage(prompt)}
-                  disabled={isSending || !userId}
-                >
-                  {prompt}
-                </button>
-              ))}
-            </div>
+        
           </div>
 
           <form className="chatbot-composer" onSubmit={handleSubmit}>
