@@ -1,5 +1,5 @@
 // ==========================================
-// utils/embedding.js (FINAL OPTIMIZED VERSION)
+// utils/embedding.js (FINAL ENHANCED VERSION)
 // ==========================================
 
 // Dynamic import for ESM module
@@ -30,7 +30,6 @@ let loadingPromise = null;
 async function initializeModel() {
   if (model && tokenizer) return;
 
-  // If already loading → wait
   if (isLoading && loadingPromise) {
     await loadingPromise;
     return;
@@ -56,6 +55,44 @@ async function initializeModel() {
 
   await loadingPromise;
   isLoading = false;
+}
+
+// ==========================================
+// 🧠 BUILD SMART CONTENT (NEW)
+// ==========================================
+function buildEmbeddingContent(input) {
+  // If string → use directly (backward compatible)
+  if (typeof input === "string") {
+    return input.trim().slice(0, 512);
+  }
+
+  // If object → structure it
+  if (typeof input === "object" && input !== null) {
+    const {
+      subject = "",
+      description = "",
+      signal = "",
+      summary = "",
+      receiver_email = "",
+      assigned_to = "",
+    } = input;
+
+    return `
+Ticket Information:
+- Subject: ${subject}
+- Description: ${description}
+
+Signal Details:
+- Type: ${signal}
+- Summary: ${summary}
+
+Routing Info:
+- Receiver Email: ${receiver_email}
+- Assigned To: ${assigned_to}
+    `.trim().slice(0, 512);
+  }
+
+  throw new Error("Invalid input for embedding");
 }
 
 // ==========================================
@@ -107,7 +144,7 @@ function normalizeVector(vec) {
 }
 
 // ==========================================
-// COSINE SIMILARITY (FIXED)
+// COSINE SIMILARITY
 // ==========================================
 function cosineSimilarity(vecA, vecB) {
   if (!vecA || !vecB || vecA.length !== vecB.length) {
@@ -130,19 +167,15 @@ function cosineSimilarity(vecA, vecB) {
 }
 
 // ==========================================
-// MAIN EMBEDDING FUNCTION
+// MAIN EMBEDDING FUNCTION (UPDATED)
 // ==========================================
-async function generateEmbedding(text) {
+async function generateEmbedding(input) {
   try {
-    if (!text || typeof text !== "string") {
-      throw new Error("Invalid text for embedding");
-    }
-
-    const trimmed = text.trim().slice(0, 512);
+    const content = buildEmbeddingContent(input);
 
     await initializeModel();
 
-    const encoded = tokenizer(trimmed, {
+    const encoded = tokenizer(content, {
       padding: true,
       truncation: true,
       return_tensors: "pt",

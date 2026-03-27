@@ -9,6 +9,14 @@ const LEGACY_ROLE_LABEL_MAP = {
   sales_rep: "Account Executive",
 };
 
+// 🔥 HELPER: sanitize values (CRITICAL FIX)
+function safeString(value) {
+  if (typeof value === "string" && value.trim() !== "") {
+    return value;
+  }
+  return null;
+}
+
 // ✅ POST /api/tickets
 const createTicket = async (req, res) => {
   try {
@@ -38,15 +46,19 @@ const createTicket = async (req, res) => {
 
     const userId = rows[0].user_id;
 
-    // 🔍 STEP 2: Extract fields
-    const zendeskTicketId = ticket.id;
-    const subject = ticket.subject;
-    const description = ticket.description;
-    const priority = ticket.priority || "normal";
+    // 🔍 STEP 2: Extract fields safely
+    const zendeskTicketId = String(ticket.id);
+    const subject = safeString(ticket.subject) || "";
+    const description = safeString(ticket.description) || "";
+    const priority = safeString(ticket.priority) || "normal";
     const status = "open";
-    const tags = JSON.stringify(ticket.tags || []);
-    const receiverEmail = ticket.receiver_email;
-    const senderEmail = ticket.requester?.email;
+
+    const tags = JSON.stringify(
+      Array.isArray(ticket.tags) ? ticket.tags : []
+    );
+
+    const receiverEmail = safeString(ticket.receiver_email);
+    const senderEmail = safeString(ticket.requester?.email);
 
     // 🔍 STEP 3: Insert / Update ticket
     await pool.execute(
@@ -82,46 +94,70 @@ const createTicket = async (req, res) => {
     const signals = await classifyTicket(subject, description);
     console.log("🎯 Signals:", signals);
 
-    // 🔍 STEP 5: Store signals (UPSERT)
+    // 🔍 STEP 5: Store signals (SAFE INSERT)
     if (signals.length > 0) {
       await Promise.all(
-        signals.map((signal) =>
-          pool.execute(
-            `INSERT INTO ticket_signals 
-            (zendesk_ticket_id, user_id, signal_type, headline, summary, assigned_to)
-             VALUES (?, ?, ?, ?, ?, ?)
-             ON DUPLICATE KEY UPDATE
-               headline = VALUES(headline),
-               summary = VALUES(summary),
-               assigned_to = VALUES(assigned_to)`,
-            [
+        signals.map(async (signal) => {
+          try {
+            const safeHeadline = safeString(signal.headline) || "";
+            const safeSummary = safeString(signal.summary) || "";
+            const safeAssignedTo = safeString(signal.assigned_to);
+            const safeReceiverEmail = receiverEmail;
+
+            console.log("🚀 INSERT SIGNAL:", {
               zendeskTicketId,
               userId,
-              signal.type,
-              signal.headline,
-              signal.summary,
-              signal.assigned_to,
-            ]
-          )
-        )
+              type: signal.type,
+              assigned_to: safeAssignedTo,
+              receiverEmail: safeReceiverEmail,
+            });
+
+            await pool.execute(
+              `INSERT INTO ticket_signals 
+              (zendesk_ticket_id, user_id, signal_type, headline, summary, assigned_to, receiver_email)
+              VALUES (?, ?, ?, ?, ?, ?, ?)
+              ON DUPLICATE KEY UPDATE
+                headline = VALUES(headline),
+                summary = VALUES(summary),
+                assigned_to = VALUES(assigned_to),
+                receiver_email = VALUES(receiver_email)`,
+              [
+                zendeskTicketId,
+                userId,
+                signal.type,
+                safeHeadline,
+                safeSummary,
+                safeAssignedTo,
+                safeReceiverEmail,
+              ]
+            );
+          } catch (err) {
+            console.error("❌ Signal insert failed:", {
+              signal,
+              receiverEmail,
+              error: err.message,
+            });
+          }
+        })
       );
 
       console.log("✅ Signals stored:", signals.length);
     }
 
-    // 🔥 STEP 6: EMBEDDINGS (UPSERT FIX)
+    // 🔥 STEP 6: EMBEDDINGS (SAFE + STRUCTURED)
     if (signals.length > 0) {
       await Promise.all(
         signals.map(async (signal) => {
-          const content = `
-Subject: ${subject}
-Description: ${description}
-Signal: ${signal.type}
-Summary: ${signal.summary}
-          `.trim();
-
           try {
-            const embedding = await generateEmbedding(content);
+            const embedding = await generateEmbedding({
+              subject,
+              description,
+              signal: signal.type,
+              summary: signal.summary,
+              receiver_email: receiverEmail,
+              assigned_to: signal.assigned_to,
+            });
+
             if (!embedding) return;
 
             await pool.execute(
@@ -135,12 +171,20 @@ Summary: ${signal.summary}
               [
                 zendeskTicketId,
                 accountId,
-                content,
+                JSON.stringify({
+                  subject,
+                  description,
+                  signal: signal.type,
+                  summary: signal.summary,
+                  receiver_email: receiverEmail,
+                  assigned_to: signal.assigned_to,
+                }),
                 JSON.stringify(embedding),
-                signal.type, // ✅ IMPORTANT (used for uniqueness)
+                signal.type,
                 JSON.stringify({
                   signal: signal.type,
                   assigned_to: signal.assigned_to,
+                  receiver_email: receiverEmail,
                 }),
               ]
             );
