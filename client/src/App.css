@@ -107,6 +107,16 @@ body {
   gap: 14px;
 }
 
+.chatbot-widget--full {
+  position: static;
+  right: auto;
+  bottom: auto;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+}
+
 .chatbot-launcher {
   width: 56px;
   height: 56px;
@@ -127,12 +137,22 @@ body {
 }
 
 .chatbot-panel {
-  width: min(390px, calc(100vw - 24px));
+  width: min(360px, calc(100vw - 24px));
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: 20px;
   box-shadow: 0 20px 48px rgba(15, 23, 42, 0.14);
   overflow: hidden;
+}
+
+.chatbot-panel--full {
+  width: 100%;
+  height: 100%;
+  min-height: 100%;
+  border-radius: 22px;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  box-shadow: none;
 }
 
 .chatbot-panel__header {
@@ -217,6 +237,21 @@ body {
   padding: 14px 16px;
   max-height: 340px;
   overflow-y: auto;
+  background: var(--bg-surface);
+}
+
+.chatbot-panel--full .chatbot-thread {
+  display: flex;
+  flex-direction: column;
+  max-height: none;
+  min-height: 0;
+  height: 100%;
+  padding: 18px 20px;
+  overflow-y: auto;
+}
+
+.chatbot-panel--full .chatbot-panel__header {
+  margin: 16px 16px 0;
   background: var(--bg-surface);
 }
 
@@ -369,12 +404,18 @@ body {
   background: var(--bg-surface);
 }
 
+.chatbot-panel--full .chatbot-composer {
+  padding: 18px 20px 20px;
+  border-top: 1px solid var(--border-subtle);
+}
+
 .chatbot-composer__shell {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-  gap: 8px;
-  padding: 6px 6px 6px 12px;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 6px 6px 6px 14px;
   border: 1px solid var(--input-border);
   border-radius: var(--radius-pill);
   background: var(--bg-subtle);
@@ -387,14 +428,15 @@ body {
 
 .chatbot-composer__input {
   width: 100%;
-  min-height: 36px;
+  min-height: 40px;
   max-height: 120px;
   resize: none;
   border: 0;
   background: transparent;
   color: var(--input-text);
-  padding: 8px 4px;
+  padding: 10px 2px;
   font: inherit;
+  line-height: 1.4;
 }
 
 .chatbot-composer__input:focus {
@@ -418,8 +460,8 @@ body {
 }
 
 .chatbot-composer__send {
-  width: 36px;
-  height: 36px;
+  width: 40px;
+  height: 40px;
   display: inline-grid;
   place-items: center;
   border: 0;
@@ -427,7 +469,8 @@ body {
   padding: 0;
   background: var(--btn-primary-bg);
   color: var(--btn-primary-text);
-  font-size: 14px;
+  font-size: 15px;
+  flex-shrink: 0;
 }
 
 .chatbot-composer__send:disabled {

@@ -1,9 +1,31 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { LuFileText, LuFolderOpen, LuPencilLine, LuSend, LuSparkles } from 'react-icons/lu';
 import { useAuth } from '../../../context/AuthContext';
 import './PlaybooksView.css';
 
-// 📌 API Base URL with fallback
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+const filterOptions = [
+  { key: 'all', label: 'All Drafts', Icon: LuFileText },
+  { key: 'generated', label: 'Generated', Icon: LuSparkles },
+  { key: 'edited', label: 'Edited', Icon: LuPencilLine },
+  { key: 'sent', label: 'Sent', Icon: LuSend },
+];
+
+function formatSignalLabel(value) {
+  if (!value) return 'General draft';
+  return String(value)
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function formatDraftDate(value) {
+  if (!value) return 'No timestamp';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return 'No timestamp';
+  return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium' }).format(date);
+}
 
 export default function PlaybooksView() {
   const { user, token } = useAuth();
@@ -13,41 +35,40 @@ export default function PlaybooksView() {
   const [editContent, setEditContent] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
-  const [filter, setFilter] = useState('all'); // all, generated, edited, sent
+  const [filter, setFilter] = useState('all');
 
-  // 📥 Fetch drafts on component mount
   useEffect(() => {
-    if (user?.id && user?.role) {
-      fetchDrafts();
-    }
-  }, [user]);
+    if (!user?.id || !user?.role) return;
 
-  const fetchDrafts = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch(`${API_BASE}/tickets/drafts`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          user_id: user.id,
-          role: user.role,
-        }),
-      });
+    const run = async () => {
+      setLoading(true);
+      try {
+        const response = await fetch(`${API_BASE}/tickets/drafts`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            user_id: user.id,
+            role: user.role,
+          }),
+        });
 
-      if (!response.ok) throw new Error('Failed to fetch drafts');
-      const data = await response.json();
-      setDrafts(data.drafts || []);
-      setError('');
-    } catch (err) {
-      console.error('❌ Error fetching drafts:', err);
-      setError('Failed to load drafts');
-    } finally {
-      setLoading(false);
-    }
-  };
+        if (!response.ok) throw new Error('Failed to fetch drafts');
+        const data = await response.json();
+        setDrafts(data.drafts || []);
+        setError('');
+      } catch (err) {
+        console.error('Error fetching drafts:', err);
+        setError('Failed to load drafts');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void run();
+  }, [token, user]);
 
   const handleEditClick = (draft) => {
     setEditingDraft(draft.id);
@@ -70,19 +91,20 @@ export default function PlaybooksView() {
       });
 
       if (!response.ok) throw new Error('Failed to update draft');
-      
-      // Update local state
-      setDrafts(drafts.map(d => 
-        d.id === draftId 
-          ? { ...d, draft_content: editContent, status: 'edited' }
-          : d
-      ));
-      
+
+      setDrafts((current) =>
+        current.map((draft) =>
+          draft.id === draftId
+            ? { ...draft, draft_content: editContent, status: 'edited' }
+            : draft
+        )
+      );
+
       setEditingDraft(null);
       setSuccess('Draft updated successfully');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      console.error('❌ Error updating draft:', err);
+      console.error('Error updating draft:', err);
       setError('Failed to update draft');
     } finally {
       setLoading(false);
@@ -108,195 +130,191 @@ export default function PlaybooksView() {
         throw new Error(errorData.error || 'Failed to send draft');
       }
 
-      // Update local state
-      setDrafts(drafts.map(d => 
-        d.id === draftId 
-          ? { ...d, status: 'sent' }
-          : d
-      ));
-      
+      setDrafts((current) =>
+        current.map((draft) => (draft.id === draftId ? { ...draft, status: 'sent' } : draft))
+      );
+
       setSuccess('Reply sent to customer via Zendesk');
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      console.error('❌ Error sending draft:', err);
+      console.error('Error sending draft:', err);
       setError(err.message || 'Failed to send draft');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleCancel = () => {
-    setEditingDraft(null);
-    setEditContent('');
-  };
+  const filteredDrafts = useMemo(
+    () => drafts.filter((draft) => (filter === 'all' ? true : draft.status === filter)),
+    [drafts, filter]
+  );
 
-  const filteredDrafts = drafts.filter(draft => {
-    if (filter === 'all') return true;
-    return draft.status === filter;
-  });
+  const counts = useMemo(
+    () => ({
+      all: drafts.length,
+      generated: drafts.filter((draft) => draft.status === 'generated').length,
+      edited: drafts.filter((draft) => draft.status === 'edited').length,
+      sent: drafts.filter((draft) => draft.status === 'sent').length,
+    }),
+    [drafts]
+  );
 
   const getStatusBadgeClass = (status) => {
     const statusClasses = {
-      generated: 'badge-generated',
-      edited: 'badge-edited',
-      sent: 'badge-sent',
+      generated: 'playbooks-status--generated',
+      edited: 'playbooks-status--edited',
+      sent: 'playbooks-status--sent',
     };
-    return statusClasses[status] || 'badge-default';
-  };
-
-  const getSignalIcon = (signalType) => {
-    const icons = {
-      churn_risk: '⚠️',
-      expansion_signal: '📈',
-      engagement_issue: '📉',
-      default: '💬',
-    };
-    return icons[signalType] || icons.default;
+    return statusClasses[status] || 'playbooks-status--default';
   };
 
   return (
-    <div className="playbooks-container">
-      <div className="playbooks-header">
-        <h2>📋 AI-Generated Playbooks & Drafts</h2>
-        <p>Auto-drafted outreach and runbooks tailored to segment, persona, and recent activity.</p>
-      </div>
+    <div className="playbooks-shell">
+      <section className="playbooks-hero">
+        <div>
+          <p className="playbooks-hero__eyebrow">AI Playbooks</p>
+          <h1>Draft outreach that teams can review, refine, and ship fast.</h1>
+          <p className="playbooks-hero__copy">
+            Track every generated response in one place, edit the message when needed, and send it
+            back into Zendesk without jumping tools.
+          </p>
+        </div>
 
-      {/* 📊 Filter tabs */}
-      <div className="filter-tabs">
-        <button 
-          className={`tab ${filter === 'all' ? 'active' : ''}`}
-          onClick={() => setFilter('all')}
-        >
-          All Drafts ({drafts.length})
-        </button>
-        <button 
-          className={`tab ${filter === 'generated' ? 'active' : ''}`}
-          onClick={() => setFilter('generated')}
-        >
-          Generated ({drafts.filter(d => d.status === 'generated').length})
-        </button>
-        <button 
-          className={`tab ${filter === 'edited' ? 'active' : ''}`}
-          onClick={() => setFilter('edited')}
-        >
-          Edited ({drafts.filter(d => d.status === 'edited').length})
-        </button>
-        <button 
-          className={`tab ${filter === 'sent' ? 'active' : ''}`}
-          onClick={() => setFilter('sent')}
-        >
-          Sent ({drafts.filter(d => d.status === 'sent').length})
-        </button>
-      </div>
+        <div className="playbooks-hero__stats">
+          <div className="playbooks-hero__stat">
+            <span>Drafts</span>
+            <strong>{counts.all}</strong>
+          </div>
+          <div className="playbooks-hero__stat">
+            <span>Ready to send</span>
+            <strong>{counts.generated + counts.edited}</strong>
+          </div>
+        </div>
+      </section>
 
-      {/* 🔄 Alerts */}
-      {error && <div className="alert alert-error">{error}</div>}
-      {success && <div className="alert alert-success">{success}</div>}
+      <section className="playbooks-toolbar">
+        <div className="playbooks-toolbar__filters" role="tablist" aria-label="Draft filters">
+          {filterOptions.map((option) => (
+            <button
+              key={option.key}
+              type="button"
+              className={`playbooks-pill ${filter === option.key ? 'playbooks-pill--active' : ''}`}
+              onClick={() => setFilter(option.key)}
+            >
+              <option.Icon size={16} />
+              <span>{option.label}</span>
+              <strong>{counts[option.key]}</strong>
+            </button>
+          ))}
+        </div>
+      </section>
 
-      {/* 📄 Drafts List */}
+      {error && <div className="playbooks-alert playbooks-alert--error">{error}</div>}
+      {success && <div className="playbooks-alert playbooks-alert--success">{success}</div>}
+
       {loading ? (
-        <div className="loading">Loading drafts...</div>
+        <div className="playbooks-empty">
+          <h2>Loading drafts...</h2>
+          <p>Pulling the latest generated responses for your role.</p>
+        </div>
       ) : filteredDrafts.length === 0 ? (
-        <div className="empty-state">
-          <p>No drafts found. Tickets will generate drafts as they arrive.</p>
+        <div className="playbooks-empty">
+          <div className="playbooks-empty__icon">
+            <LuFolderOpen />
+          </div>
+          <h2>No drafts yet</h2>
+          <p>New tickets will generate drafts here as signals arrive.</p>
         </div>
       ) : (
-        <div className="drafts-grid">
+        <div className="playbooks-grid">
           {filteredDrafts.map((draft) => (
-            <div key={draft.id} className="draft-card">
-              {/* Header */}
-              <div className="draft-header">
-                <div className="draft-signal">
-                  <span className="signal-icon">{getSignalIcon(draft.signal_type)}</span>
-                  <span className="signal-name">{draft.signal_type?.replace(/_/g, ' ').toUpperCase()}</span>
+            <article key={draft.id} className="playbooks-card">
+              <div className="playbooks-card__top">
+                <div className="playbooks-card__signal">
+                  <span className="playbooks-card__signal-label">{formatSignalLabel(draft.signal_type)}</span>
+                  <h2>Ticket #{draft.zendesk_ticket_id}</h2>
                 </div>
-                <span className={`status-badge ${getStatusBadgeClass(draft.status)}`}>
-                  {draft.status.toUpperCase()}
+
+                <span className={`playbooks-status ${getStatusBadgeClass(draft.status)}`}>
+                  {draft.status || 'draft'}
                 </span>
               </div>
 
-              {/* Ticket Reference */}
-              <div className="draft-meta">
-                <small>Ticket ID: {draft.zendesk_ticket_id}</small>
-                {draft.created_at && (
-                  <small>{new Date(draft.created_at).toLocaleDateString()}</small>
-                )}
+              <div className="playbooks-card__meta">
+                <div>
+                  <span>Created</span>
+                  <strong>{formatDraftDate(draft.created_at)}</strong>
+                </div>
+                <div>
+                  <span>Role</span>
+                  <strong>{user?.role ? formatSignalLabel(user.role) : 'Team member'}</strong>
+                </div>
               </div>
 
-              {/* Content Area */}
               {editingDraft === draft.id ? (
-                <div className="edit-mode">
+                <div className="playbooks-editor">
                   <textarea
                     value={editContent}
-                    onChange={(e) => setEditContent(e.target.value)}
-                    className="draft-textarea"
-                    rows={8}
+                    onChange={(event) => setEditContent(event.target.value)}
+                    className="playbooks-editor__input"
+                    rows={10}
                   />
-                  <div className="edit-actions">
+                  <div className="playbooks-actions">
                     <button
-                      className="btn-save"
+                      type="button"
+                      className="playbooks-button playbooks-button--primary"
                       onClick={() => handleSaveEdit(draft.id)}
                       disabled={loading}
                     >
-                      ✓ Save
+                      Save changes
                     </button>
                     <button
-                      className="btn-cancel"
-                      onClick={handleCancel}
+                      type="button"
+                      className="playbooks-button playbooks-button--secondary"
+                      onClick={() => {
+                        setEditingDraft(null);
+                        setEditContent('');
+                      }}
                       disabled={loading}
                     >
-                      ✕ Cancel
+                      Cancel
                     </button>
                   </div>
                 </div>
               ) : (
-                <div className="draft-content">
-                  <p>{draft.draft_content}</p>
-                </div>
-              )}
+                <>
+                  <div className="playbooks-copy">
+                    <p>{draft.draft_content}</p>
+                  </div>
 
-              {/* Action Buttons */}
-              {draft.status !== 'sent' && editingDraft !== draft.id && (
-                <div className="draft-actions">
-                  <button
-                    className="btn-edit"
-                    onClick={() => handleEditClick(draft)}
-                    disabled={loading}
-                    title="Edit the draft content"
-                  >
-                    ✏️ Edit
-                  </button>
-                  <button
-                    className="btn-send"
-                    onClick={() => handleSendDraft(draft.id)}
-                    disabled={loading}
-                    title="Send to customer via Zendesk"
-                  >
-                    📤 Send
-                  </button>
-                </div>
+                  {draft.status === 'sent' ? (
+                    <div className="playbooks-sent">Sent to customer</div>
+                  ) : (
+                    <div className="playbooks-actions">
+                      <button
+                        type="button"
+                        className="playbooks-button playbooks-button--secondary"
+                        onClick={() => handleEditClick(draft)}
+                        disabled={loading}
+                      >
+                        Edit draft
+                      </button>
+                      <button
+                        type="button"
+                        className="playbooks-button playbooks-button--primary"
+                        onClick={() => handleSendDraft(draft.id)}
+                        disabled={loading}
+                      >
+                        Send to Zendesk
+                      </button>
+                    </div>
+                  )}
+                </>
               )}
-
-              {draft.status === 'sent' && (
-                <div className="sent-indicator">
-                  ✅ Sent to customer
-                </div>
-              )}
-            </div>
+            </article>
           ))}
         </div>
       )}
-
-      {/* ℹ️ Info section */}
-      <div className="playbooks-info">
-        <h3>How it works:</h3>
-        <ul>
-          <li>🔍 <strong>Detection:</strong> When a ticket arrives, it's classified for signals (churn risk, expansion, etc.)</li>
-          <li>🤖 <strong>Generation:</strong> AI creates role-specific draft responses</li>
-          <li>✏️ <strong>Customization:</strong> Team members can edit drafts to match brand voice</li>
-          <li>📤 <strong>Sending:</strong> One click sends via Zendesk to the customer</li>
-        </ul>
-      </div>
     </div>
   );
 }

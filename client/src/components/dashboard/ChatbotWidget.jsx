@@ -20,9 +20,10 @@ function createMessage(role, text, extra = {}) {
   };
 }
 
-export default function ChatbotWidget() {
+export default function ChatbotWidget({ variant = 'floating' }) {
   const { authAxios, user } = useAuth();
-  const [open, setOpen] = useState(false);
+  const isFull = variant === 'full';
+  const [open, setOpen] = useState(isFull);
   const [draft, setDraft] = useState('');
   const [isSending, setIsSending] = useState(false);
   const [sessionId, setSessionId] = useState('');
@@ -46,6 +47,10 @@ export default function ChatbotWidget() {
     if (!open || !threadRef.current) return;
     threadRef.current.scrollTop = threadRef.current.scrollHeight;
   }, [messages, open]);
+
+  useEffect(() => {
+    if (isFull) setOpen(true);
+  }, [isFull]);
 
   useEffect(() => {
     if (!sessionStorageKey) {
@@ -76,14 +81,13 @@ export default function ChatbotWidget() {
     const text = String(nextText || '').trim();
     if (!text || isSending || !userId) return;
 
+    const activeSessionId = await ensureSession();
     const userMessage = createMessage('user', text);
     setMessages((current) => [...current, userMessage]);
     setDraft('');
     setIsSending(true);
 
     try {
-      const activeSessionId = await ensureSession();
-
       const response = await authAxios.post('/chat', {
         user_id: userId,
         role: chatRole,
@@ -92,12 +96,7 @@ export default function ChatbotWidget() {
       });
 
       const reply = response.data?.reply || 'I could not generate a reply just now.';
-      const sources = response.data?.sources;
       const returnedSessionId = response.data?.session_id || activeSessionId;
-      const sourceNote =
-        sources && (sources.tickets?.length || sources.conversations)
-          ? `Sources: ${sources.tickets?.length || 0} ticket matches, ${sources.conversations || 0} memory matches.`
-          : '';
 
       if (returnedSessionId && sessionStorageKey) {
         localStorage.setItem(sessionStorageKey, returnedSessionId);
@@ -106,7 +105,7 @@ export default function ChatbotWidget() {
 
       setMessages((current) => [
         ...current,
-        createMessage('assistant', reply, { meta: sourceNote }),
+        createMessage('assistant', reply),
       ]);
     } catch (error) {
       const message =
@@ -129,32 +128,35 @@ export default function ChatbotWidget() {
   };
 
   return (
-    <div className="chatbot-widget">
+    <div className={`chatbot-widget ${isFull ? 'chatbot-widget--full' : ''}`}>
       {open && (
-        <section id="chatbot-panel" className="chatbot-panel" aria-label="Chat assistant">
+        <section
+          id="chatbot-panel"
+          className={`chatbot-panel ${isFull ? 'chatbot-panel--full' : ''}`}
+          aria-label="Chat assistant"
+        >
           <div className="chatbot-panel__header">
             <div className="chatbot-panel__identity">
               <div className="chatbot-panel__avatar">
                 <LuBot />
               </div>
               <div>
-                {/* <p className="chatbot-panel__eyebrow">Copilot</p> */}
                 <h2 className="chatbot-panel__title">Sales Ticket Copilot</h2>
               </div>
             </div>
-            <button
-              type="button"
-              className="chatbot-panel__close"
-              onClick={() => setOpen(false)}
-              aria-label="Close chat assistant"
-            >
-              <LuX />
-            </button>
+            {!isFull && (
+              <button
+                type="button"
+                className="chatbot-panel__close"
+                onClick={() => setOpen(false)}
+                aria-label="Close chat assistant"
+              >
+                <LuX />
+              </button>
+            )}
           </div>
 
           <div className="chatbot-thread" ref={threadRef}>
-            
-
             {messages.map((message) => {
               const isAssistant = message.role === 'assistant';
 
@@ -167,10 +169,6 @@ export default function ChatbotWidget() {
                     <div className={`chatbot-message ${isAssistant ? 'chatbot-message--assistant' : 'chatbot-message--user'}`}>
                       <p>{message.text}</p>
                     </div>
-                    {/* <div className={`chatbot-message-meta ${isAssistant ? '' : 'chatbot-message-meta--user'}`}>
-                      <span className="chatbot-message__time">{formatTime(message.createdAt)}</span>
-                      {message.meta && <span className="chatbot-message__source">{message.meta}</span>}
-                    </div> */}
                   </div>
                 </div>
               );
@@ -190,8 +188,6 @@ export default function ChatbotWidget() {
                 </div>
               </div>
             )}
-
-        
           </div>
 
           <form className="chatbot-composer" onSubmit={handleSubmit}>
@@ -218,21 +214,22 @@ export default function ChatbotWidget() {
                 <LuSendHorizonal />
               </button>
             </div>
-          
           </form>
         </section>
       )}
 
-      <button
-        type="button"
-        className="chatbot-launcher"
-        onClick={() => setOpen((value) => !value)}
-        aria-expanded={open}
-        aria-controls="chatbot-panel"
-        aria-label={open ? 'Close chat assistant' : 'Open chat assistant'}
-      >
-        {open ? <LuX /> : <LuMessageCircle />}
-      </button>
+      {!isFull && (
+        <button
+          type="button"
+          className="chatbot-launcher"
+          onClick={() => setOpen((value) => !value)}
+          aria-expanded={open}
+          aria-controls="chatbot-panel"
+          aria-label={open ? 'Close chat assistant' : 'Open chat assistant'}
+        >
+          {open ? <LuX /> : <LuMessageCircle />}
+        </button>
+      )}
     </div>
   );
 }

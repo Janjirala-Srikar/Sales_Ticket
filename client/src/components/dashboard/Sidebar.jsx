@@ -35,13 +35,14 @@ function Sidebar({ sidebarOpen, setSidebarOpen, collapsed, onToggleCollapse }) {
   return (
     <div className="min-w-fit">
       <div
-        className={`fixed inset-0 bg-gray-900/30 z-40 lg:hidden transition-opacity duration-200 ${sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className={`fixed inset-0 bg-gray-900/30 z-40 md:hidden transition-opacity duration-200 ${sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         aria-hidden="true"
         onClick={() => setSidebarOpen(false)}
       />
 
       <div
-        className={`sidebar-theme sidebar-theme--white sidebar-slim ${collapsed ? 'sidebar-collapsed' : ''} flex flex-col fixed z-50 left-0 top-0 h-[100dvh] overflow-hidden no-scrollbar w-64 shrink-0 p-4 transition-all duration-200 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-64'} lg:static lg:translate-x-0`}
+        id="sidebar"
+        className={`sidebar-theme sidebar-theme--white sidebar-slim ${collapsed ? 'sidebar-collapsed' : ''} flex flex-col fixed z-50 left-0 top-0 h-[100dvh] overflow-hidden no-scrollbar w-64 shrink-0 p-4 transition-all duration-200 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-64'} md:static md:translate-x-0`}
       >
         <div className={`flex items-center ${collapsed ? 'justify-center' : 'justify-between'} mb-8`}>
           <button
@@ -68,7 +69,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, collapsed, onToggleCollapse }) {
                 </svg>
               </button>
               <button
-                className="lg:hidden text-gray-500 hover:text-gray-700"
+                className="md:hidden text-gray-500 hover:text-gray-700"
                 onClick={() => setSidebarOpen(false)}
                 aria-label="Close sidebar"
               >

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import ChatbotWidget from './ChatbotWidget';
 import AllTickets from './views/AllTickets';
@@ -18,6 +18,8 @@ import './Dashboard.css';
 export default function Dashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const location = useLocation();
+  const isAskIntelRoute = location.pathname.includes('/dashboard/ask-intel');
 
   return (
     <div className="dash-shell">
@@ -31,13 +33,16 @@ export default function Dashboard() {
 
         <div className="dash-content">
           <main className="dash-main">
-            {sidebarCollapsed && (
+            {!sidebarOpen && (
               <button
                 type="button"
-                className="dash-mobile-toggle dash-mobile-toggle--collapsed"
+                className="dash-mobile-toggle dash-mobile-toggle--floating"
                 aria-controls="sidebar"
-                aria-expanded="false"
-                onClick={() => setSidebarCollapsed(false)}
+                aria-expanded={sidebarOpen}
+                onClick={() => {
+                  setSidebarCollapsed(false);
+                  setSidebarOpen(true);
+                }}
               >
                 <span className="sr-only">Open sidebar</span>
                 <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -67,7 +72,7 @@ export default function Dashboard() {
           </main>
         </div>
       </div>
-      <ChatbotWidget />
+      {!isAskIntelRoute && <ChatbotWidget />}
     </div>
   );
 }
