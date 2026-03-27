@@ -32,6 +32,7 @@ export default function ChatbotWidget() {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [sessionId, setSessionId] = useState('');
   const [messages, setMessages] = useState(() => [
     createMessage(
       'assistant',
@@ -43,11 +44,40 @@ export default function ChatbotWidget() {
   const displayRole = useMemo(() => formatRoleLabel(user?.role), [user?.role]);
   const userId = user?.id || user?.userId || null;
   const chatRole = displayRole;
+  const sessionStorageKey = useMemo(
+    () => (userId ? `ts_chat_session_${userId}` : ''),
+    [userId]
+  );
 
   useEffect(() => {
     if (!open || !threadRef.current) return;
     threadRef.current.scrollTop = threadRef.current.scrollHeight;
   }, [messages, open]);
+
+  useEffect(() => {
+    if (!sessionStorageKey) {
+      setSessionId('');
+      return;
+    }
+
+    const storedSession = localStorage.getItem(sessionStorageKey) || '';
+    setSessionId(storedSession);
+  }, [sessionStorageKey]);
+
+  const ensureSession = async () => {
+    if (!userId) return '';
+    if (sessionId) return sessionId;
+
+    const response = await authAxios.post('/chat/session/start', { user_id: userId });
+    const nextSessionId = response.data?.session_id || '';
+
+    if (nextSessionId && sessionStorageKey) {
+      localStorage.setItem(sessionStorageKey, nextSessionId);
+    }
+
+    setSessionId(nextSessionId);
+    return nextSessionId;
+  };
 
   const submitMessage = async (nextText) => {
     const text = String(nextText || '').trim();
@@ -59,18 +89,27 @@ export default function ChatbotWidget() {
     setIsSending(true);
 
     try {
+      const activeSessionId = await ensureSession();
+
       const response = await authAxios.post('/chat', {
         user_id: userId,
         role: chatRole,
         message: text,
+        session_id: activeSessionId,
       });
 
       const reply = response.data?.reply || 'I could not generate a reply just now.';
       const sources = response.data?.sources;
+      const returnedSessionId = response.data?.session_id || activeSessionId;
       const sourceNote =
         sources && (sources.tickets?.length || sources.conversations)
           ? `Sources: ${sources.tickets?.length || 0} ticket matches, ${sources.conversations || 0} memory matches.`
           : '';
+
+      if (returnedSessionId && sessionStorageKey) {
+        localStorage.setItem(sessionStorageKey, returnedSessionId);
+        setSessionId(returnedSessionId);
+      }
 
       setMessages((current) => [
         ...current,
