@@ -1,6 +1,7 @@
 const pool = require("../config/database");
 const { classifyTicket } = require("../utils/groqClassifier");
-const { generateEmbedding } = require("../utils/embedding");
+const { generateDraftFromSignal } = require("../utils/aiDraftGenerator");
+const { sendReplyToZendesk } = require("../utils/zendeskSender");
 
 const LEGACY_ROLE_LABEL_MAP = {
   product_manager: "Product Manager",
@@ -20,27 +21,43 @@ function safeString(value) {
 // ✅ POST /api/tickets
 const createTicket = async (req, res) => {
   try {
-    console.log("🔥 WEBHOOK HIT");
-
-    const accountId = req.headers["x-zendesk-account-id"];
-    console.log("📌 Account ID:", accountId);
-
-    const ticket = req.body.ticket;
-
-    if (!ticket) {
-      return res.status(400).json({ error: "Invalid payload" });
+    // ✅ Check if body was successfully parsed
+    if (req.bodyParseError) {
+      return res.status(400).json({ 
+        error: "Invalid JSON in request body", 
+        details: req.bodyParseError.message 
+      });
     }
 
-    console.log("📨 Ticket:", ticket);
+    const accountId = req.headers["x-zendesk-account-id"];
+    let ticket = req.body?.ticket;
 
-    // 🔍 STEP 1: Map account → user
+    // Fallback: if body IS the ticket (not wrapped)
+    if (!ticket && req.body?.id && req.body?.subject) {
+      ticket = req.body;
+    }
+
+    if (!ticket) {
+      console.error('❌ No ticket data found in payload');
+      console.log('Available body keys:', Object.keys(req.body || {}));
+      return res.status(400).json({ 
+        error: "Invalid payload - no ticket data",
+        received: Object.keys(req.body || {})
+      });
+    }
+
+    console.log('✅ Ticket extracted:', { 
+      id: ticket.id, 
+      subject: ticket.subject?.substring(0, 50)
+    });
+    
+    // 🔍 map account → user
     const [rows] = await pool.execute(
       "SELECT user_id FROM zendesk_accounts WHERE zendesk_account_id = ?",
       [accountId]
     );
 
-    if (rows.length === 0) {
-      console.log("❌ No mapping found for account:", accountId);
+    if (!rows.length) {
       return res.status(400).json({ error: "Unknown Zendesk account" });
     }
 
@@ -60,41 +77,31 @@ const createTicket = async (req, res) => {
     const receiverEmail = safeString(ticket.receiver_email);
     const senderEmail = safeString(ticket.requester?.email);
 
-    // 🔍 STEP 3: Insert / Update ticket
+    // ✅ store ticket
     await pool.execute(
       `INSERT INTO tickets 
-      (zendesk_ticket_id, zendesk_account_id, user_id, subject, description, priority, status, tags, receiver_email, sender_email)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (zendesk_ticket_id, zendesk_account_id, user_id, subject, description, receiver_email, sender_email)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         subject = VALUES(subject),
         description = VALUES(description),
-        priority = VALUES(priority),
-        status = VALUES(status),
-        tags = VALUES(tags),
         receiver_email = VALUES(receiver_email),
-        sender_email = VALUES(sender_email)
-      `,
+        sender_email = VALUES(sender_email)`,
       [
         zendeskTicketId,
         accountId,
         userId,
         subject,
         description,
-        priority,
-        status,
-        tags,
         receiverEmail,
         senderEmail,
       ]
     );
 
-    console.log("✅ Ticket stored for user:", userId);
-
-    // 🔍 STEP 4: Classification
+    // ✅ classify signals
     const signals = await classifyTicket(subject, description);
-    console.log("🎯 Signals:", signals);
 
-    // 🔍 STEP 5: Store signals (SAFE INSERT)
+    // 🔍 STEP 5: Store signals + drafts + embeddings (ALL IN ONE LOOP)
     if (signals.length > 0) {
       await Promise.all(
         signals.map(async (signal) => {
@@ -112,6 +119,7 @@ const createTicket = async (req, res) => {
               receiverEmail: safeReceiverEmail,
             });
 
+            // ✅ 1. Insert signal
             await pool.execute(
               `INSERT INTO ticket_signals 
               (zendesk_ticket_id, user_id, signal_type, headline, summary, assigned_to, receiver_email)
@@ -131,92 +139,64 @@ const createTicket = async (req, res) => {
                 safeReceiverEmail,
               ]
             );
+
+            // ✅ 2. Generate AI draft (now async with Groq AI)
+            const draft = await generateDraftFromSignal(signal, { 
+              subject, 
+              description,
+              receiver_email: receiverEmail 
+            });
+
+            await pool.execute(
+              `INSERT INTO ai_drafts 
+              (zendesk_ticket_id, user_id, signal_type, assigned_to, draft_content, status)
+              VALUES (?, ?, ?, ?, ?, 'generated')
+              ON DUPLICATE KEY UPDATE 
+                draft_content = VALUES(draft_content),
+                status = VALUES(status)`,
+              [
+                zendeskTicketId,
+                userId,
+                signal.type,
+                safeAssignedTo,
+                draft,
+              ]
+            );
+
+            console.log("✅ Draft generated successfully for:", signal.type, "🤖 (AI-powered)");
+
           } catch (err) {
-            console.error("❌ Signal insert failed:", {
-              signal,
-              receiverEmail,
+            console.error("❌ Signal/Draft processing failed:", {
+              signal: signal.type,
               error: err.message,
             });
           }
         })
       );
-
-      console.log("✅ Signals stored:", signals.length);
     }
 
-    // 🔥 STEP 6: EMBEDDINGS (SAFE + STRUCTURED)
-    if (signals.length > 0) {
-      await Promise.all(
-        signals.map(async (signal) => {
-          try {
-            const embedding = await generateEmbedding({
-              subject,
-              description,
-              signal: signal.type,
-              summary: signal.summary,
-              receiver_email: receiverEmail,
-              assigned_to: signal.assigned_to,
-            });
-
-            if (!embedding) return;
-
-            await pool.execute(
-              `INSERT INTO embeddings 
-              (ticket_id, account_id, content, embedding, type, metadata)
-              VALUES (?, ?, ?, ?, ?, ?)
-              ON DUPLICATE KEY UPDATE
-                content = VALUES(content),
-                embedding = VALUES(embedding),
-                metadata = VALUES(metadata)`,
-              [
-                zendeskTicketId,
-                accountId,
-                JSON.stringify({
-                  subject,
-                  description,
-                  signal: signal.type,
-                  summary: signal.summary,
-                  receiver_email: receiverEmail,
-                  assigned_to: signal.assigned_to,
-                }),
-                JSON.stringify(embedding),
-                signal.type,
-                JSON.stringify({
-                  signal: signal.type,
-                  assigned_to: signal.assigned_to,
-                  receiver_email: receiverEmail,
-                }),
-              ]
-            );
-
-            console.log("🧠 Upserted:", signal.type);
-          } catch (err) {
-            console.error("❌ Embedding failed:", err.message);
-          }
-        })
-      );
-    }
-
-    return res.status(200).json({
+    res.json({
       message: "Ticket processed successfully",
       signals_detected: signals.length,
     });
 
   } catch (err) {
-    console.error("❌ Error in createTicket:", err);
-    return res.status(500).json({
-      error: "Something went wrong",
-    });
+    console.error("❌ createTicket error:", err);
+    res.status(500).json({ error: "Error processing ticket" });
   }
 };
 
-// ✅ GET all tickets
+
+
+// ==============================
+// ✅ GET ALL TICKETS (OLD)
+// ==============================
 const getAllTicketsofUser = async (req, res) => {
   try {
     const userId = req.params.userId;
 
     if (!userId) {
-      return res.status(400).json({ error: "User ID is required" });
+      return res.status(400).json({ error: "User ID required" });
     }
 
     const [tickets] = await pool.execute(
@@ -224,21 +204,25 @@ const getAllTicketsofUser = async (req, res) => {
       [userId]
     );
 
-    return res.status(200).json({ tickets });
+    res.json({ tickets });
 
   } catch (err) {
     console.error("❌ getAllTicketsofUser error:", err);
-    return res.status(500).json({ error: "Failed to fetch tickets" });
+    res.status(500).json({ error: "Failed to fetch tickets" });
   }
 };
 
-// ✅ GET signals
+
+
+// ==============================
+// ✅ GET SIGNALS (ROLE-BASED)
+// ==============================
 const getSignals = async (req, res) => {
   try {
     const { user_id, role } = req.body;
 
     if (!user_id || !role) {
-      return res.status(400).json({ error: "user_id and role are required" });
+      return res.status(400).json({ error: "user_id and role required" });
     }
 
     const normalizedRole = String(role).trim();
@@ -256,16 +240,96 @@ const getSignals = async (req, res) => {
           [user_id, normalizedRole]
         );
 
-    return res.status(200).json({ signals });
+    res.json({ signals });
 
   } catch (err) {
     console.error("❌ getSignals error:", err);
-    return res.status(500).json({ error: "Failed to fetch signals" });
+    res.status(500).json({ error: "Failed to fetch signals" });
   }
 };
 
+
+
+// ==============================
+// ✅ GET DRAFTS (NEW)
+// ==============================
+const getDraftsByRole = async (req, res) => {
+  try {
+    const { user_id, role } = req.body;
+
+    const [drafts] = await pool.execute(
+      `SELECT * FROM ai_drafts 
+       WHERE user_id = ? AND assigned_to = ?
+       ORDER BY created_at DESC`,
+      [user_id, role]
+    );
+
+    res.json({ drafts });
+
+  } catch (err) {
+    console.error("❌ getDrafts error:", err);
+    res.status(500).json({ error: "Failed to fetch drafts" });
+  }
+};
+
+
+
+// ==============================
+// ✅ UPDATE DRAFT
+// ==============================
+const updateDraft = async (req, res) => {
+  try {
+    const { draft_id, content } = req.body;
+
+    await pool.execute(
+      `UPDATE ai_drafts 
+       SET draft_content = ?, status='edited' 
+       WHERE id = ?`,
+      [content, draft_id]
+    );
+
+    res.json({ message: "Draft updated" });
+
+  } catch (err) {
+    console.error("❌ updateDraft error:", err);
+    res.status(500).json({ error: "Update failed" });
+  }
+};
+
+
+
+// ==============================
+// ✅ SEND DRAFT (Zendesk)
+// ==============================
+const sendDraft = async (req, res) => {
+  try {
+    const { draft_id } = req.body;
+
+    await sendReplyToZendesk({ draftId: draft_id });
+
+    await pool.execute(
+      `UPDATE ai_drafts SET status='sent' WHERE id=?`,
+      [draft_id]
+    );
+
+    res.json({ message: "Reply sent via Zendesk" });
+
+  } catch (err) {
+    console.error("❌ sendDraft error:", err);
+    res.status(500).json({ error: err.message });
+  }
+};
+
+
+
+// ==============================
+// ✅ EXPORT ALL
+// ==============================
 module.exports = {
   createTicket,
-  getAllTicketsofUser,
-  getSignals,
+  getAllTicketsofUser,   // ✅ restored
+  getSignals,            // ✅ restored
+  getDraftsByRole,
+  updateDraft,
+  sendDraft,
 };
