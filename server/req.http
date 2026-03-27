@@ -148,3 +148,29 @@ Content-Type: application/json
   "user_id": 30001,
   "role": "Account Executive"
 }
+
+
+### =========================
+### 5. ZENDESK WEBHOOK TEST
+### =========================
+
+### Create Ticket (Webhook from Zendesk)
+POST http://localhost:5000/api/tickets/tickets
+Content-Type: application/json
+X-Zendesk-Account-Id: zendesk-123-account
+
+{
+  "ticket": {
+    "id": 12345,
+    "subject": "Customer having issues with billing",
+    "description": "Customer cannot process payments through the platform",
+    "priority": "high",
+    "status": "open",
+    "tags": ["billing", "urgent"],
+    "receiver_email": "support@lumora.zendesk.com",
+    "requester": {
+      "email": "customer@example.com",
+      "name": "John Doe"
+    }
+  }
+}

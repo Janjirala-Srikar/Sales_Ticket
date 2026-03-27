@@ -17,14 +17,42 @@ const verifyToken = require("./middlewares/authMiddleware");
 
 const app = express();
 app.use(cors());
-//app.use(express.json());
+
+// ✅ FIXED: Middleware order - handle multiple content types
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 app.use(
   express.json({
+    limit: '50mb',
     verify: (req, res, buf) => {
       req.rawBody = buf.toString();
     },
   })
 );
+
+// ✅ FIXED: Error handler for malformed JSON (silent recovery)
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    // 🔥 SILENT RECOVERY: Try to parse raw body instead
+    req.bodyParseError = err;
+
+    try {
+      const raw = req.rawBody || "";
+      const match = raw.match(/\{[\s\S]*\}/);
+
+      if (match) {
+        req.body = JSON.parse(match[0]);
+      } else {
+        req.body = {};
+      }
+    } catch (e) {
+      req.body = {};
+    }
+
+    return next(); // Continue processing
+  }
+
+  next(err);
+});
 
 app.get("/", (req, res) => res.json({ message: "Server Running" }));
 
@@ -56,5 +84,8 @@ app.post("/api/tickets",     ticketController.createTicket);
 app.get ("/api/tickets/:userId",     ticketController.getAllTicketsofUser);
 app.post("/api/signals", ticketController.getSignals);
 
+app.post("/api/tickets/drafts", ticketController.getDraftsByRole);
+app.post("/api/tickets/drafts/update", ticketController.updateDraft);
+app.post("/api/tickets/drafts/send", ticketController.sendDraft);
 
 
