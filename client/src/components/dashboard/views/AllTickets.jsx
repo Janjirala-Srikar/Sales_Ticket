@@ -102,6 +102,39 @@ function isToday(value) {
   );
 }
 
+function getSignalTimestamp(signal) {
+  return signal?.created_at || signal?.ticket_created_at || null;
+}
+
+function isWithinRange(value, range) {
+  if (!value || range === 'all') return true;
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return false;
+
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+
+  if (diffMs < 0) return false;
+
+  const rangeMap = {
+    day: 24 * 60 * 60 * 1000,
+    week: 7 * 24 * 60 * 60 * 1000,
+    month: 30 * 24 * 60 * 60 * 1000,
+    year: 365 * 24 * 60 * 60 * 1000,
+  };
+
+  return diffMs <= (rangeMap[range] || Number.POSITIVE_INFINITY);
+}
+
+function getSignalTypeValue(signals) {
+  const types = Array.from(new Set(signals.map((signal) => signal.type).filter(Boolean)));
+
+  if (types.length === 0) return 'No signals';
+  if (types.length === 1) return formatLabel(types[0]);
+  return `${types.length} types`;
+}
+
 function getBadgeStyle(tone) {
   return {
     display: 'inline-flex',
@@ -126,7 +159,9 @@ function DetailModal({ item, onClose, isTeamLogin }) {
           <div>
             <div className="ticket-card__eyebrow ticket-card__eyebrow--row">
               <span>{isTeamLogin ? formatLabel(item.type || 'signal') : `Ticket #${item.id}`}</span>
-              {!isTeamLogin && <span className="ticket-card__eyebrow-date">{formatTicketDate(item.created_at)}</span>}
+              <span className="ticket-card__eyebrow-date">
+                {formatTicketDate(isTeamLogin ? getSignalTimestamp(item) : item.created_at)}
+              </span>
             </div>
             <h2>{isTeamLogin ? item.headline || 'Untitled signal' : item.subject || 'Untitled ticket'}</h2>
           </div>
@@ -134,14 +169,9 @@ function DetailModal({ item, onClose, isTeamLogin }) {
 
         <div className="ticket-card__badges">
           {isTeamLogin ? (
-            <>
-              <span className="ticket-badge" style={getBadgeStyle(fallbackTone)}>
-                Type: {formatLabel(item.type)}
-              </span>
-              <span className="ticket-badge" style={getBadgeStyle(fallbackTone)}>
-                Assigned To: {item.assigned_to || 'Not available'}
-              </span>
-            </>
+            <span className="ticket-badge" style={getBadgeStyle(fallbackTone)}>
+              Type: {formatLabel(item.type)}
+            </span>
           ) : (
             <>
               <span className="ticket-badge" style={getBadgeStyle(getTone(priorityToneMap, item.priority, fallbackTone))}>
@@ -178,6 +208,8 @@ export default function AllTickets() {
   const [selectedItem, setSelectedItem] = useState(null);
   const [priorityFilter, setPriorityFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [signalRangeFilter, setSignalRangeFilter] = useState('all');
+  const [signalReceiverFilter, setSignalReceiverFilter] = useState('all');
   const userId = user?.id || user?.userId || 30001;
   const userRole = user?.role || '';
   const isTeamLogin = Boolean(userRole);
@@ -210,9 +242,23 @@ export default function AllTickets() {
     refetchOnWindowFocus: false,
   });
 
-  const items = ticketsQuery.data || [];
-  const tickets = isTeamLogin ? [] : items;
-  const signals = isTeamLogin ? items : [];
+  const items = useMemo(() => ticketsQuery.data || [], [ticketsQuery.data]);
+  const tickets = useMemo(() => (isTeamLogin ? [] : items), [isTeamLogin, items]);
+  const signals = useMemo(() => (isTeamLogin ? items : []), [isTeamLogin, items]);
+  const signalReceiverOptions = useMemo(
+    () => Array.from(new Set(signals.map((signal) => signal.receiver_email).filter(Boolean))).sort(),
+    [signals]
+  );
+  const filteredSignals = useMemo(
+    () =>
+      signals.filter((signal) => {
+        const matchesRange = isWithinRange(getSignalTimestamp(signal), signalRangeFilter);
+        const matchesReceiver =
+          signalReceiverFilter === 'all' || String(signal.receiver_email || '').toLowerCase() === signalReceiverFilter;
+        return matchesRange && matchesReceiver;
+      }),
+    [signalRangeFilter, signalReceiverFilter, signals]
+  );
 
   const priorityOptions = useMemo(
     () =>
@@ -229,9 +275,10 @@ export default function AllTickets() {
   const stats = useMemo(() => {
     if (isTeamLogin) {
       return {
-        totalSignals: signals.length,
-        uniqueTypes: new Set(signals.map((signal) => signal.type).filter(Boolean)).size,
-        assignedSignals: signals.filter((signal) => Boolean(signal.assigned_to)).length,
+        signalType: getSignalTypeValue(filteredSignals),
+        totalSignals: filteredSignals.length,
+        totalCustomers: new Set(filteredSignals.map((signal) => signal.receiver_email).filter(Boolean)).size,
+        newToday: filteredSignals.filter((signal) => isToday(getSignalTimestamp(signal))).length,
       };
     }
 
@@ -241,7 +288,7 @@ export default function AllTickets() {
       uniqueAccounts: new Set(tickets.map((ticket) => ticket.zendesk_account_id).filter(Boolean)).size,
       ticketsToday: tickets.filter((ticket) => isToday(ticket.created_at)).length,
     };
-  }, [isTeamLogin, signals, tickets]);
+  }, [filteredSignals, isTeamLogin, tickets]);
 
   const filteredTickets = useMemo(
     () =>
@@ -254,7 +301,7 @@ export default function AllTickets() {
     [priorityFilter, statusFilter, tickets]
   );
 
-  const visibleItems = isTeamLogin ? signals : filteredTickets;
+  const visibleItems = isTeamLogin ? filteredSignals : filteredTickets;
 
   return (
     <div className="ticket-health-layout">
@@ -266,17 +313,50 @@ export default function AllTickets() {
           {isTeamLogin ? (
             <>
               <div style={summaryCardStyle}>
-                <span style={summaryLabelStyle}>Signals</span>
+                <span style={summaryLabelStyle}>Signal Type</span>
+                <strong style={summaryValueStyle}>{stats.signalType}</strong>
+              </div>
+              <div style={summaryCardStyle}>
+                <span style={summaryLabelStyle}>Total Signals</span>
                 <strong style={summaryValueStyle}>{stats.totalSignals}</strong>
               </div>
               <div style={summaryCardStyle}>
-                <span style={summaryLabelStyle}>Signal Types</span>
-                <strong style={summaryValueStyle}>{stats.uniqueTypes}</strong>
+                <span style={summaryLabelStyle}>Customers</span>
+                <strong style={summaryValueStyle}>{stats.totalCustomers}</strong>
               </div>
               <div style={summaryCardStyle}>
-                <span style={summaryLabelStyle}>Assigned</span>
-                <strong style={summaryValueStyle}>{stats.assignedSignals}</strong>
+                <span style={summaryLabelStyle}>New Today</span>
+                <strong style={summaryValueStyle}>{stats.newToday}</strong>
               </div>
+              <label className="ticket-filter-card">
+                <span className="ticket-filter-card__label">Time Range</span>
+                <select
+                  className="ticket-filter-card__select"
+                  value={signalRangeFilter}
+                  onChange={(event) => setSignalRangeFilter(event.target.value)}
+                >
+                  <option value="all">All time</option>
+                  <option value="day">Past 1 day</option>
+                  <option value="week">Past 1 week</option>
+                  <option value="month">Past 1 month</option>
+                  <option value="year">Past 1 year</option>
+                </select>
+              </label>
+              <label className="ticket-filter-card">
+                <span className="ticket-filter-card__label">Customer</span>
+                <select
+                  className="ticket-filter-card__select"
+                  value={signalReceiverFilter}
+                  onChange={(event) => setSignalReceiverFilter(event.target.value)}
+                >
+                  <option value="all">All customers</option>
+                  {signalReceiverOptions.map((receiver) => (
+                    <option key={receiver} value={receiver.toLowerCase()}>
+                      {receiver}
+                    </option>
+                  ))}
+                </select>
+              </label>
             </>
           ) : (
             <>
@@ -383,37 +463,33 @@ export default function AllTickets() {
                 <div className="ticket-card__top-main">
                   <div className="ticket-card__eyebrow ticket-card__eyebrow--row">
                     <span>{isTeamLogin ? formatLabel(item.type || 'signal') : `Ticket #${item.id}`}</span>
-                    {!isTeamLogin && <span className="ticket-card__eyebrow-date">{formatTicketDate(item.created_at)}</span>}
+                    <span className="ticket-card__eyebrow-date">
+                      {formatTicketDate(isTeamLogin ? getSignalTimestamp(item) : item.created_at)}
+                    </span>
                   </div>
                   <h3 className="ticket-card__title">{isTeamLogin ? item.headline || 'Untitled signal' : item.subject || 'Untitled ticket'}</h3>
                 </div>
               </div>
 
-              <div className="ticket-card__badges">
-                {isTeamLogin ? (
-                  <span className="ticket-badge" style={getBadgeStyle(fallbackTone)}>
-                    Assigned To: {item.assigned_to || 'Not available'}
+              {!isTeamLogin && (
+                <div className="ticket-card__badges">
+                  <span className="ticket-badge" style={getBadgeStyle(getTone(priorityToneMap, item.priority, fallbackTone))}>
+                    Priority: {formatLabel(item.priority)}
                   </span>
-                ) : (
-                  <>
-                    <span className="ticket-badge" style={getBadgeStyle(getTone(priorityToneMap, item.priority, fallbackTone))}>
-                      Priority: {formatLabel(item.priority)}
-                    </span>
-                    <span className="ticket-badge" style={getBadgeStyle(getTone(statusToneMap, item.status, fallbackTone))}>
-                      Status: {formatLabel(item.status)}
-                    </span>
-                  </>
-                )}
-              </div>
+                  <span className="ticket-badge" style={getBadgeStyle(getTone(statusToneMap, item.status, fallbackTone))}>
+                    Status: {formatLabel(item.status)}
+                  </span>
+                </div>
+              )}
 
               <div className="ticket-card__message">
-                {isTeamLogin ? item.summary || 'No summary provided.' : getPreviewText(item.description)}
+                {isTeamLogin ? getPreviewText(item.summary) : getPreviewText(item.description)}
               </div>
 
               <div className="ticket-card__meta ticket-card__meta--full">
                 <div className="ticket-card__meta-item ticket-card__meta-item--receiver">
-                  <span>{isTeamLogin ? 'Signal Type' : 'Receiver'}</span>
-                  <strong>{isTeamLogin ? formatLabel(item.type) : item.receiver_email || 'N/A'}</strong>
+                  <span>{isTeamLogin ? 'Receiver Email' : 'Receiver'}</span>
+                  <strong>{item.receiver_email || 'N/A'}</strong>
                 </div>
               </div>
 
@@ -445,6 +521,6 @@ const summaryLabelStyle = {
 
 const summaryValueStyle = {
   color: 'var(--blue-primary)',
-  fontSize: 28,
+  fontSize: 22,
   lineHeight: 1.1,
 };
