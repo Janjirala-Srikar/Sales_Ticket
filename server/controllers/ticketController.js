@@ -1,5 +1,6 @@
-const pool = require("../config/database"); 
-const { classifyTicket } = require("../utils/groqClassifier"); // adjust path
+const pool = require("../config/database");
+const { classifyTicket } = require("../utils/groqClassifier");
+const { generateEmbedding } = require("../utils/embedding");
 
 const LEGACY_ROLE_LABEL_MAP = {
   product_manager: "Product Manager",
@@ -37,66 +38,125 @@ const createTicket = async (req, res) => {
 
     const userId = rows[0].user_id;
 
-    // 🔍 STEP 2: Extract fields (UPDATED)
+    // 🔍 STEP 2: Extract fields
     const zendeskTicketId = ticket.id;
-    const subject = ticket.subject; // from JSON (mapped from title)
+    const subject = ticket.subject;
     const description = ticket.description;
     const priority = ticket.priority || "normal";
-    const status = "open"; // default since not provided
+    const status = "open";
     const tags = JSON.stringify(ticket.tags || []);
     const receiverEmail = ticket.receiver_email;
+    const senderEmail = ticket.requester?.email;
 
-    // 🔍 STEP 3: Insert into DB
-     await pool.execute(
-  `INSERT INTO tickets 
-  (zendesk_ticket_id, zendesk_account_id, user_id, subject, description, priority, status, tags, receiver_email)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-  ON DUPLICATE KEY UPDATE
-    subject = VALUES(subject),
-    description = VALUES(description),
-    priority = VALUES(priority),
-    status = VALUES(status),
-    tags = VALUES(tags),
-    receiver_email = VALUES(receiver_email)
-  `,
-  [
-    zendeskTicketId,
-    accountId,
-    userId,
-    subject,
-    description,
-    priority,
-    status,
-    tags,
-    receiverEmail
-  ]
-);
+    // 🔍 STEP 3: Insert / Update ticket
+    await pool.execute(
+      `INSERT INTO tickets 
+      (zendesk_ticket_id, zendesk_account_id, user_id, subject, description, priority, status, tags, receiver_email, sender_email)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE
+        subject = VALUES(subject),
+        description = VALUES(description),
+        priority = VALUES(priority),
+        status = VALUES(status),
+        tags = VALUES(tags),
+        receiver_email = VALUES(receiver_email),
+        sender_email = VALUES(sender_email)
+      `,
+      [
+        zendeskTicketId,
+        accountId,
+        userId,
+        subject,
+        description,
+        priority,
+        status,
+        tags,
+        receiverEmail,
+        senderEmail,
+      ]
+    );
+
     console.log("✅ Ticket stored for user:", userId);
 
-// 🔍 STEP 4: Run revenue signal classification
-const signals = await classifyTicket(subject, description);
-console.log("🎯 Signals for ticket:", zendeskTicketId, signals);
+    // 🔍 STEP 4: Classification
+    const signals = await classifyTicket(subject, description);
+    console.log("🎯 Signals:", signals);
 
-// 🔍 STEP 5: Store signals in DB (if any)
-if (signals.length > 0) {
-  for (const signal of signals) {
-    await pool.execute(
-      `INSERT INTO ticket_signals (zendesk_ticket_id, user_id, signal_type, headline, summary, assigned_to)
-       VALUES (?, ?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE
-         headline = VALUES(headline),
-         summary = VALUES(summary),
-         assigned_to = VALUES(assigned_to)`,
-      [zendeskTicketId, userId, signal.type, signal.headline, signal.summary, signal.assigned_to]
-    );
-  }
-  console.log("✅ Signals stored:", signals.length);
-}
+    // 🔍 STEP 5: Store signals (UPSERT)
+    if (signals.length > 0) {
+      await Promise.all(
+        signals.map((signal) =>
+          pool.execute(
+            `INSERT INTO ticket_signals 
+            (zendesk_ticket_id, user_id, signal_type, headline, summary, assigned_to)
+             VALUES (?, ?, ?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE
+               headline = VALUES(headline),
+               summary = VALUES(summary),
+               assigned_to = VALUES(assigned_to)`,
+            [
+              zendeskTicketId,
+              userId,
+              signal.type,
+              signal.headline,
+              signal.summary,
+              signal.assigned_to,
+            ]
+          )
+        )
+      );
 
-return res.status(200).json({
-  message: "Ticket stored successfully",
-  signals_detected: signals.length,
-});
+      console.log("✅ Signals stored:", signals.length);
+    }
+
+    // 🔥 STEP 6: EMBEDDINGS (UPSERT FIX)
+    if (signals.length > 0) {
+      await Promise.all(
+        signals.map(async (signal) => {
+          const content = `
+Subject: ${subject}
+Description: ${description}
+Signal: ${signal.type}
+Summary: ${signal.summary}
+          `.trim();
+
+          try {
+            const embedding = await generateEmbedding(content);
+            if (!embedding) return;
+
+            await pool.execute(
+              `INSERT INTO embeddings 
+              (ticket_id, account_id, content, embedding, type, metadata)
+              VALUES (?, ?, ?, ?, ?, ?)
+              ON DUPLICATE KEY UPDATE
+                content = VALUES(content),
+                embedding = VALUES(embedding),
+                metadata = VALUES(metadata)`,
+              [
+                zendeskTicketId,
+                accountId,
+                content,
+                JSON.stringify(embedding),
+                signal.type, // ✅ IMPORTANT (used for uniqueness)
+                JSON.stringify({
+                  signal: signal.type,
+                  assigned_to: signal.assigned_to,
+                }),
+              ]
+            );
+
+            console.log("🧠 Upserted:", signal.type);
+          } catch (err) {
+            console.error("❌ Embedding failed:", err.message);
+          }
+        })
+      );
+    }
+
+    return res.status(200).json({
+      message: "Ticket processed successfully",
+      signals_detected: signals.length,
+    });
 
   } catch (err) {
     console.error("❌ Error in createTicket:", err);
@@ -128,6 +188,7 @@ const getAllTicketsofUser = async (req, res) => {
   }
 };
 
+// ✅ GET signals
 const getSignals = async (req, res) => {
   try {
     const { user_id, role } = req.body;
@@ -152,6 +213,7 @@ const getSignals = async (req, res) => {
         );
 
     return res.status(200).json({ signals });
+
   } catch (err) {
     console.error("❌ getSignals error:", err);
     return res.status(500).json({ error: "Failed to fetch signals" });
@@ -161,5 +223,5 @@ const getSignals = async (req, res) => {
 module.exports = {
   createTicket,
   getAllTicketsofUser,
-  getSignals
+  getSignals,
 };
