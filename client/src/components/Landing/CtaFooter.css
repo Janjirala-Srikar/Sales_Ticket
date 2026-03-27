@@ -1,6 +1,6 @@
 /* ── CTA ── */
 .cta-section {
-  padding: 96px 48px;
+  padding: 96px var(--landing-section-pad-x);
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -100,7 +100,7 @@
 
 /* ── Footer ── */
 .footer {
-  padding: 48px 48px;
+  padding: 48px var(--landing-section-pad-x);
   border-top: 1px solid var(--border-subtle);
   display: flex;
   justify-content: space-between;
@@ -142,7 +142,7 @@
 
 @media (max-width: 768px) {
   .cta-section {
-    padding: 72px 24px;
+    padding: 72px var(--landing-section-pad-x-mobile);
   }
 
   .cta-section h2 {
@@ -165,7 +165,7 @@
     flex-direction: column;
     gap: 16px;
     text-align: center;
-    padding: 36px 24px;
+    padding: 36px var(--landing-section-pad-x-mobile);
   }
 
   .footer-logo {

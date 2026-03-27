@@ -85,12 +85,20 @@ export default function SignalSection() {
 
   return (
     <section className="section signal-section" id="signals">
-      <div className="section-label">Four Signal Types</div>
-      <h2>
-        Every ticket carries
-        <br />
-        one of four signals
-      </h2>
+      <div className="signals-head">
+        <div className="signals-kicker-row">
+          <div className="section-label">Four Signal Types</div>
+          <span className="signals-kicker-pill">Auto-detected from tickets</span>
+        </div>
+        <h2 className="signals-title">
+          Every ticket carries
+          <br />
+          one of four signals
+        </h2>
+        <p className="signals-subtitle">
+          TicketSignal classifies every conversation by business impact, so sales, CS, and product teams can act fast without digging through raw threads.
+        </p>
+      </div>
 
       <div className="signals-grid" onMouseMove={handleSignalsMove} onMouseLeave={handleSignalsLeave}>
         {SIGNALS.map((signal, index) => (

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { SiZendesk, SiIntercom, SiSalesforce, SiHubspot, SiSlack } from 'react-icons/si';
 import './HeroSection.css';
@@ -19,6 +19,45 @@ const TICKER_ITEMS = [
   { color: 'dot-green', text: 'Cascade Media - "our team has grown 3x, we need more seats" -> Expansion signal - $36k ARR' },
   { color: 'dot-red',   text: 'Summit Group - "if this isn\'t fixed by end of month we\'re cancelling" -> Churn risk - $12k ARR' },
 ];
+
+const ROTATING_HEADLINE_TEXTS = [
+  'revenue intelligence.',
+  'churn risk alerts.',
+  'expansion signals.',
+  'competitor insights.',
+];
+
+function RotatingText({ texts, rotationInterval = 2500 }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const currentText = texts[activeIndex] ?? '';
+
+  useEffect(() => {
+    if (texts.length < 2) return undefined;
+
+    const intervalId = window.setInterval(() => {
+      setActiveIndex((prevIndex) => (prevIndex + 1) % texts.length);
+    }, rotationInterval);
+
+    return () => window.clearInterval(intervalId);
+  }, [texts, rotationInterval]);
+
+  return (
+    <span className="hero-rotating-shell" aria-live="polite" aria-atomic="true">
+      <span className="hero-rotating-a11y">{currentText}</span>
+      <span key={currentText} className="hero-rotating-word" aria-hidden="true">
+        {currentText.split('').map((char, charIndex) => (
+          <span
+            key={`${currentText}-${charIndex}`}
+            className={`hero-rotating-char${char === ' ' ? ' is-space' : ''}`}
+            style={{ '--char-index': charIndex }}
+          >
+            {char === ' ' ? '\u00A0' : char}
+          </span>
+        ))}
+      </span>
+    </span>
+  );
+}
 
 function DashboardPreview() {
   const handleFrameMouseMove = (event) => {
@@ -115,6 +154,17 @@ export default function HeroSection() {
   const navigate = useNavigate();
   const [ctaEmail, setCtaEmail] = useState('');
 
+  const scrollToSection = (sectionId) => {
+    const target = document.getElementById(sectionId);
+    if (!target) return;
+
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    target.scrollIntoView({
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
+      block: 'start',
+    });
+  };
+
   const handleCtaSubmit = (e) => {
     e.preventDefault();
     navigate('/register', { state: { prefillEmail: ctaEmail } });
@@ -126,9 +176,15 @@ export default function HeroSection() {
         <div className="nav-pill">
           <div className="nav-logo">TicketSignal</div>
           <div className="nav-links">
-            <Link to="/#how"     className="nav-link">How it works</Link>
-            <Link to="/#signals" className="nav-link">Signals</Link>
-            <Link to="/#teams"   className="nav-link">Teams</Link>
+            <button type="button" className="nav-link nav-link-btn" onClick={() => scrollToSection('how')}>
+              How it works
+            </button>
+            <button type="button" className="nav-link nav-link-btn" onClick={() => scrollToSection('features')}>
+              Features
+            </button>
+            <button type="button" className="nav-link nav-link-btn" onClick={() => scrollToSection('pricing')}>
+              Pricing
+            </button>
           </div>
           <div className="nav-auth">
             <Link to="/login" className="nav-register">Login / Register</Link>
@@ -140,7 +196,12 @@ export default function HeroSection() {
         <div className="hero-aurora" />
         <div className="hero-glow" />
 
-        <h1>Turn every support ticket into <em>revenue intelligence.</em></h1>
+        <h1 className="hero-title">
+          <span className="hero-title-static">Turn every support ticket into</span>
+          <span className="hero-title-dynamic">
+            <RotatingText texts={ROTATING_HEADLINE_TEXTS} />
+          </span>
+        </h1>
         <p className="hero-sub">
           Capture churn risks, expansion signals, and competitor mentions straight from support threads, then route each to the owner in seconds.
         </p>

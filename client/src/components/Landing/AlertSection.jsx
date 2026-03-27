@@ -106,7 +106,7 @@ const FLOW_MENU_ITEMS = [
 
 export default function AlertSection() {
   return (
-    <section className="section alert-section">
+    <section className="section alert-section" id = "features"> 
       <div className="section-label">The Output</div>
 
       <div className="output-lead">

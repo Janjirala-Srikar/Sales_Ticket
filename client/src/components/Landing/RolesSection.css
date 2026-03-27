@@ -10,8 +10,6 @@
    --border   : rgba(255,255,255,0.07)
 */
 
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@700;800&family=DM+Sans:wght@400;500;600&display=swap');
-
 .roles-section {
   --bg-deep:   #ffffff;
   --bg-card:   #0e1120;
@@ -31,7 +29,7 @@
   grid-template-rows: auto;
   align-items: center;
   gap: 0 4vw;
-  padding: 7rem 6vw 7rem;
+  padding: 7rem var(--landing-section-pad-x) 7rem;
 
   /* Subtle radial glow behind the globe */
   &::before {
@@ -51,52 +49,129 @@
   grid-column: 1;
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 2rem;
   z-index: 1;
 }
 
-.section-label {
+.roles-section .section-label {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  font-family: 'DM Sans', system-ui, sans-serif;
+  gap: 0.9rem;
+  font-family: 'DM Mono', monospace;
   font-size: 0.78rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--accent);
-  padding: 0.35rem 0.85rem;
+  padding: 0.5rem 1rem;
   border: 1px solid rgba(58, 134, 255, 0.28);
   border-radius: 99px;
   background: rgba(58, 134, 255, 0.08);
   width: fit-content;
 }
 
+.roles-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.89rem;
+}
+
 .roles-heading {
-  font-family: 'Syne', system-ui, sans-serif;
-  font-size: clamp(2rem, 3.8vw, 3.4rem);
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(2.2rem, 4vw, 3.6rem);
   font-weight: 800;
-  line-height: 1.08;
-  letter-spacing: -0.03em;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
   color: var(--text-hi);
   margin: 0;
 }
 
 .roles-heading-accent {
-  background: linear-gradient(90deg, var(--accent) 0%, var(--accent2) 100%);
+  background: var(--text-mid);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-.roles-copy {
-  font-family: 'DM Sans', system-ui, sans-serif;
-  font-size: clamp(0.9rem, 1.15vw, 1.05rem);
+.roles-subtitle {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: clamp(0.95rem, 1.2vw, 1.1rem);
   font-weight: 400;
-  line-height: 1.65;
+  line-height: 1.7;
   color: var(--text-mid);
-  max-width: 38ch;
+  max-width: 45ch;
   margin: 0;
+}
+
+/* ─── Benefits List ─────────────────────────────────────────────────────────── */
+
+.roles-benefits {
+  display: flex;
+  flex-direction: column;
+  list-style: none;
+  margin: 0;
+  gap: 1rem;
+  padding: 1.5rem 0;
+  border-top: 1px solid rgba(58, 134, 255, 0.12);
+  border-bottom: 1px solid rgba(58, 134, 255, 0.12);
+}
+
+.benefit-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.benefit-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(58, 134, 255, 0.2), rgba(94, 96, 206, 0.15));
+  border: 1px solid rgba(58, 134, 255, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.benefit-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.benefit-title {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-hi);
+  display: block;
+  margin: 0;
+}
+
+.benefit-desc {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--text-mid);
+  line-height: 1.5;
+  display: block;
+  margin: 0;
+}
+
+/* ─── CTA Text ──────────────────────────────────────────────────────────────── */
+
+.roles-cta-text {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.6;
+  color: var(--text-mid);
+  margin: 0;
+  font-style: italic;
 }
 
 /* ─── Right column: globe ───────────────────────────────────────────────────── */
@@ -116,30 +191,93 @@
 @media (max-width: 900px) {
   .roles-section {
     grid-template-columns: 1fr;
-    padding: 5rem 6vw;
+    padding: 5rem var(--landing-section-pad-x-mobile) 5rem;
     gap: 3rem;
   }
 
   .roles-header {
     grid-column: 1;
+    gap: 1.5rem;
+  }
+
+  .roles-heading {
+    font-size: clamp(1.8rem, 5vw, 2.8rem);
+  }
+
+  .roles-subtitle {
+    font-size: clamp(0.9rem, 1.1vw, 1rem);
+    max-width: 100%;
+  }
+
+  .roles-benefits {
+    padding: 1rem 0;
+  }
+
+  .benefit-item {
+    gap: 0.875rem;
+  }
+
+  .benefit-title {
+    font-size: 0.9rem;
+  }
+
+  .benefit-desc {
+    font-size: 0.8rem;
   }
 
   .roles-menu-host {
     grid-column: 1;
     height: 420px;
   }
-
-  .roles-copy {
-    max-width: 100%;
-  }
 }
 
 @media (max-width: 540px) {
-  .roles-menu-host {
-    height: 340px;
+  .roles-section {
+    padding: 3.5rem var(--landing-section-pad-x-mobile) 3.5rem;
+    gap: 2.5rem;
+  }
+
+  .roles-header {
+    gap: 1.25rem;
   }
 
   .roles-heading {
-    font-size: 1.85rem;
+    font-size: clamp(1.6rem, 4.5vw, 2.2rem);
+  }
+
+  .roles-subtitle {
+    font-size: 0.9rem;
+  }
+
+  .roles-benefits {
+    padding: 1rem 0;
+    gap: 0.75rem;
+  }
+
+  .benefit-item {
+    gap: 0.75rem;
+  }
+
+  .benefit-icon {
+    width: 20px;
+    height: 20px;
+    font-size: 10px;
+    min-width: 20px;
+  }
+
+  .benefit-title {
+    font-size: 0.85rem;
+  }
+
+  .benefit-desc {
+    font-size: 0.75rem;
+  }
+
+  .roles-cta-text {
+    font-size: 0.85rem;
+  }
+
+  .roles-menu-host {
+    height: 350px;
   }
 }

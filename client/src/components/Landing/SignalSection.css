@@ -1,9 +1,59 @@
 .signal-section {
   padding-top: 0;
+  position: relative;
+}
+
+.signals-head {
+  max-width: 760px;
+}
+
+.signals-kicker-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.signal-section .section-label {
+  margin: 0;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--blue-mid);
+}
+
+.signals-kicker-pill {
+  display: inline-flex;
+  align-items: center;
+
+  color: var(--blue-primary);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  font-style: italic;
+  text-transform: uppercase;
+}
+
+.signals-title {
+  margin: 14px 0 0;
+  font-family: 'DM Serif Display', serif;
+  font-size: clamp(30px, 4vw, 50px);
+  line-height: 1.12;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+}
+
+.signals-subtitle {
+  margin: 14px 0 0;
+  max-width: 650px;
+  color: var(--text-body);
+  line-height: 1.75;
+  font-size: 15px;
 }
 
 .signals-grid {
-  margin-top: 56px;
+  margin-top: 48px;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 18px;
@@ -138,7 +188,7 @@
 
 .signal-card h3 {
   margin: 0;
-  font-family: 'Space Grotesk', sans-serif;
+  font-family: 'DM Serif Display', serif;
   font-size: 24px;
   line-height: 1.2;
   letter-spacing: -0.01em;
@@ -222,6 +272,11 @@
 }
 
 @media (max-width: 900px) {
+  .signals-kicker-pill {
+    font-size: 9px;
+    letter-spacing: 0.07em;
+  }
+
   .signals-grid {
     grid-template-columns: 1fr;
   }
