@@ -394,10 +394,10 @@ export default function AccountHealthView() {
   const topSignalType = signalDist[0]?.type || "";
   const momentum =
     ["churn_risk", "nps_drop"].includes(topSignalType)
-      ? "Negative: churn-oriented signals are dominating."
+      ? "Negative signal trend"
       : topSignalType === "upsell_opportunity"
-        ? "Positive: upsell momentum is showing across accounts."
-        : "Mixed: no single signal type is dominating the graph.";
+        ? "Positive upsell trend"
+        : "Mixed : No Signal single type is dominating in the graph.";
 
   const stats = useMemo(
     () => ({
@@ -470,12 +470,12 @@ export default function AccountHealthView() {
           <div style={summaryCardStyle}><span style={summaryLabelStyle}>Accounts</span><strong style={summaryValueStyle}>{stats.totalAccounts}</strong></div>
           <div style={summaryCardStyle}><span style={summaryLabelStyle}>Tickets</span><strong style={summaryValueStyle}>{stats.totalTickets}</strong></div>
           <div style={summaryCardStyle}><span style={summaryLabelStyle}>Signal Types</span><strong style={summaryValueStyle}>{stats.signalTypes}</strong></div>
-          <div style={{ ...summaryCardStyle, alignContent: "start", minHeight: 116 }}>
+          <div style={{ ...summaryCardStyle, alignContent: "start", minHeight: 116, gridColumn: "span 2", minWidth: 0 }}>
             <span style={summaryLabelStyle}>Momentum</span>
             <strong
               style={{
                 color: "var(--blue-deep)",
-                fontSize: 13,
+                fontSize: 18,
                 lineHeight: 1.5,
                 fontWeight: 600,
                 display: "block",
