@@ -82,6 +82,7 @@ app.listen(PORT, async () => {
 // ─── Tickets ────────────────────────────────────────────────
 app.post("/api/tickets",     ticketController.createTicket);
 app.get ("/api/tickets/:userId",     ticketController.getAllTicketsofUser);
+app.get ("/api/audio-tickets/:userId", ticketController.getAudioTickets);
 app.post("/api/signals", ticketController.getSignals);
 
 app.post("/api/tickets/drafts", ticketController.getDraftsByRole);

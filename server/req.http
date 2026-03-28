@@ -174,3 +174,11 @@ X-Zendesk-Account-Id: zendesk-123-account
     }
   }
 }
+
+
+###
+GET {{baseUrl}}/api/audio-tickets/30001
+Content-Type: application/json
+
+
+
