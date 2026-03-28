@@ -8,6 +8,8 @@ const userRoutes = require("./routes/user.Routes");
 const emailRoutes = require("./routes/email.Routes");
 const chatRoutes = require("./routes/chat.Routes");
 const ticketController = require("./controllers/ticketController");
+const graphRoutes = require("./routes/graph.Routes");   // import
+
 
 const app = express();
 
@@ -39,6 +41,8 @@ app.use((err, req, res, next) => {
 });
 
 app.get("/", (req, res) => res.json({ message: "Server Running" }));
+
+app.use("/api/graph", graphRoutes);                      // register
 
 app.use("/api/users", userRoutes);
 app.use("/api/email", emailRoutes);
