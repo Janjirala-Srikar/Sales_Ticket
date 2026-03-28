@@ -10,7 +10,6 @@ const LEGACY_ROLE_LABEL_MAP = {
   sales_rep: "Account Executive",
 };
 
-// 🔥 HELPER: sanitize values (CRITICAL FIX)
 function safeString(value) {
   if (typeof value === "string" && value.trim() !== "") {
     return value;
@@ -18,40 +17,94 @@ function safeString(value) {
   return null;
 }
 
-// ✅ POST /api/tickets
+// ==============================
+// ✅ CREATE TICKET (FINAL FIXED)
+// ==============================
 const createTicket = async (req, res) => {
   try {
-    // ✅ Check if body was successfully parsed
     if (req.bodyParseError) {
-      return res.status(400).json({ 
-        error: "Invalid JSON in request body", 
-        details: req.bodyParseError.message 
+      return res.status(400).json({
+        error: "Invalid JSON in request body",
+        details: req.bodyParseError.message,
       });
     }
 
     const accountId = req.headers["x-zendesk-account-id"];
     let ticket = req.body?.ticket;
 
-    // Fallback: if body IS the ticket (not wrapped)
     if (!ticket && req.body?.id && req.body?.subject) {
       ticket = req.body;
     }
 
     if (!ticket) {
-      console.error('❌ No ticket data found in payload');
-      console.log('Available body keys:', Object.keys(req.body || {}));
-      return res.status(400).json({ 
-        error: "Invalid payload - no ticket data",
-        received: Object.keys(req.body || {})
+      return res.status(400).json({ error: "Invalid payload - no ticket data" });
+    }
+
+    console.log("✅ Ticket extracted:", {
+      id: ticket.id,
+      subject: ticket.subject,
+    });
+
+    const zendeskTicketId = String(ticket.id);
+
+    // =========================
+    // 🎧 VOICE DETECTION
+    // =========================
+    let audioUrl = safeString(ticket.recording_url);
+
+    // ✅ FALLBACK 1: Try to extract from description
+    if (!audioUrl && ticket.description) {
+      const descMatch = ticket.description.match(
+        /https:\/\/lumora\.zendesk\.com\/api\/v2\/channels\/voice\/calls\/[^\s\)\n]+/i
+      );
+      audioUrl = descMatch ? descMatch[0] : null;
+      if (audioUrl) console.log("✅ Recording URL extracted from description");
+    }
+
+    // ✅ FALLBACK 2: Try to extract from latest_comment
+    if (!audioUrl && ticket.latest_comment) {
+      const commentMatch = ticket.latest_comment.match(
+        /https:\/\/lumora\.zendesk\.com\/api\/v2\/channels\/voice\/calls\/[^\s\)\n]+/i
+      );
+      audioUrl = commentMatch ? commentMatch[0] : null;
+      if (audioUrl) console.log("✅ Recording URL extracted from latest_comment");
+    }
+
+    const subjectText = (ticket.subject || "").toLowerCase().trim();
+
+    console.log("🔍 Subject check:", subjectText);
+    console.log("🎧 Audio URL:", audioUrl);
+
+    const isVoiceMail =
+      audioUrl ||
+      subjectText.includes("voicemail") ||
+      subjectText.includes("voice mail") ||
+      subjectText.includes("abandoned call") ||
+      subjectText.includes("missed call");
+
+    // =========================
+    // 🎧 VOICE MAIL FAST PATH
+    // =========================
+    if (isVoiceMail) {
+      console.log("🚀 VOICE PATH TRIGGERED");
+      console.log("🎧 Voicemail detected — details:");
+      console.log("   zendesk_ticket_id :", zendeskTicketId);
+      console.log("   audio_url         :", audioUrl || null);
+      console.log("   subject           :", ticket.subject || "");
+      console.log("\n📦 FULL TICKET:\n", JSON.stringify(ticket, null, 2));
+
+      return res.json({
+        message: "Voice mail received",
+        type: "audio",
+        zendesk_ticket_id: zendeskTicketId,
+        audio_url: audioUrl || null,
       });
     }
 
-    console.log('✅ Ticket extracted:', { 
-      id: ticket.id, 
-      subject: ticket.subject?.substring(0, 50)
-    });
-    
-    // 🔍 map account → user
+    // =========================
+    // ✅ NORMAL FLOW (TEXT)
+    // =========================
+
     const [rows] = await pool.execute(
       "SELECT user_id FROM zendesk_accounts WHERE zendesk_account_id = ?",
       [accountId]
@@ -63,21 +116,12 @@ const createTicket = async (req, res) => {
 
     const userId = rows[0].user_id;
 
-    // 🔍 STEP 2: Extract fields safely
-    const zendeskTicketId = String(ticket.id);
     const subject = safeString(ticket.subject) || "";
     const description = safeString(ticket.description) || "";
-    const priority = safeString(ticket.priority) || "normal";
-    const status = "open";
-
-    const tags = JSON.stringify(
-      Array.isArray(ticket.tags) ? ticket.tags : []
-    );
-
     const receiverEmail = safeString(ticket.receiver_email);
     const senderEmail = safeString(ticket.requester?.email);
 
-    // ✅ store ticket
+    // ✅ STORE NORMAL TICKET
     await pool.execute(
       `INSERT INTO tickets 
       (zendesk_ticket_id, zendesk_account_id, user_id, subject, description, receiver_email, sender_email)
@@ -98,10 +142,11 @@ const createTicket = async (req, res) => {
       ]
     );
 
-    // ✅ classify signals
+    // =========================
+    // 🤖 AI PIPELINE (TEXT ONLY)
+    // =========================
     const signals = await classifyTicket(subject, description);
 
-    // 🔍 STEP 5: Store signals + drafts + embeddings (ALL IN ONE LOOP)
     if (signals.length > 0) {
       await Promise.all(
         signals.map(async (signal) => {
@@ -109,17 +154,8 @@ const createTicket = async (req, res) => {
             const safeHeadline = safeString(signal.headline) || "";
             const safeSummary = safeString(signal.summary) || "";
             const safeAssignedTo = safeString(signal.assigned_to);
-            const safeReceiverEmail = receiverEmail;
 
-            console.log("🚀 INSERT SIGNAL:", {
-              zendeskTicketId,
-              userId,
-              type: signal.type,
-              assigned_to: safeAssignedTo,
-              receiverEmail: safeReceiverEmail,
-            });
-
-            // ✅ 1. Insert signal
+            // STORE SIGNAL
             await pool.execute(
               `INSERT INTO ticket_signals 
               (zendesk_ticket_id, user_id, signal_type, headline, summary, assigned_to, receiver_email)
@@ -136,22 +172,22 @@ const createTicket = async (req, res) => {
                 safeHeadline,
                 safeSummary,
                 safeAssignedTo,
-                safeReceiverEmail,
+                receiverEmail,
               ]
             );
 
-            // ✅ 2. Generate AI draft (now async with Groq AI)
-            const draft = await generateDraftFromSignal(signal, { 
-              subject, 
+            // GENERATE DRAFT
+            const draft = await generateDraftFromSignal(signal, {
+              subject,
               description,
-              receiver_email: receiverEmail 
+              receiver_email: receiverEmail,
             });
 
             await pool.execute(
               `INSERT INTO ai_drafts 
               (zendesk_ticket_id, user_id, signal_type, assigned_to, draft_content, status)
               VALUES (?, ?, ?, ?, ?, 'generated')
-              ON DUPLICATE KEY UPDATE 
+              ON DUPLICATE KEY UPDATE
                 draft_content = VALUES(draft_content),
                 status = VALUES(status)`,
               [
@@ -163,20 +199,16 @@ const createTicket = async (req, res) => {
               ]
             );
 
-            console.log("✅ Draft generated successfully for:", signal.type, "🤖 (AI-powered)");
-
+            console.log("✅ Draft generated for:", signal.type);
           } catch (err) {
-            console.error("❌ Signal/Draft processing failed:", {
-              signal: signal.type,
-              error: err.message,
-            });
+            console.error("❌ Signal/Draft error:", err.message);
           }
         })
       );
     }
 
     res.json({
-      message: "Ticket processed successfully",
+      message: "Text ticket processed successfully",
       signals_detected: signals.length,
     });
 
@@ -186,18 +218,34 @@ const createTicket = async (req, res) => {
   }
 };
 
+// ==============================
+// 🎧 GET AUDIO TICKETS
+// ==============================
+const getAudioTickets = async (req, res) => {
+  try {
+    const userId = req.params.userId;
 
+    const [rows] = await pool.execute(
+      `SELECT * FROM audio_tickets 
+       WHERE user_id = ?
+       ORDER BY created_at DESC`,
+      [userId]
+    );
+
+    res.json({ audio_tickets: rows });
+
+  } catch (err) {
+    console.error("❌ getAudioTickets error:", err);
+    res.status(500).json({ error: "Failed to fetch audio tickets" });
+  }
+};
 
 // ==============================
-// ✅ GET ALL TICKETS (OLD)
+// EXISTING APIs
 // ==============================
 const getAllTicketsofUser = async (req, res) => {
   try {
     const userId = req.params.userId;
-
-    if (!userId) {
-      return res.status(400).json({ error: "User ID required" });
-    }
 
     const [tickets] = await pool.execute(
       "SELECT * FROM tickets WHERE user_id = ? ORDER BY created_at DESC",
@@ -207,23 +255,13 @@ const getAllTicketsofUser = async (req, res) => {
     res.json({ tickets });
 
   } catch (err) {
-    console.error("❌ getAllTicketsofUser error:", err);
     res.status(500).json({ error: "Failed to fetch tickets" });
   }
 };
 
-
-
-// ==============================
-// ✅ GET SIGNALS (ROLE-BASED)
-// ==============================
 const getSignals = async (req, res) => {
   try {
     const { user_id, role } = req.body;
-
-    if (!user_id || !role) {
-      return res.status(400).json({ error: "user_id and role required" });
-    }
 
     const normalizedRole = String(role).trim();
     const legacyRole = LEGACY_ROLE_LABEL_MAP[normalizedRole];
@@ -243,16 +281,10 @@ const getSignals = async (req, res) => {
     res.json({ signals });
 
   } catch (err) {
-    console.error("❌ getSignals error:", err);
     res.status(500).json({ error: "Failed to fetch signals" });
   }
 };
 
-
-
-// ==============================
-// ✅ GET DRAFTS (NEW)
-// ==============================
 const getDraftsByRole = async (req, res) => {
   try {
     const { user_id, role } = req.body;
@@ -267,16 +299,10 @@ const getDraftsByRole = async (req, res) => {
     res.json({ drafts });
 
   } catch (err) {
-    console.error("❌ getDrafts error:", err);
     res.status(500).json({ error: "Failed to fetch drafts" });
   }
 };
 
-
-
-// ==============================
-// ✅ UPDATE DRAFT
-// ==============================
 const updateDraft = async (req, res) => {
   try {
     const { draft_id, content } = req.body;
@@ -291,16 +317,10 @@ const updateDraft = async (req, res) => {
     res.json({ message: "Draft updated" });
 
   } catch (err) {
-    console.error("❌ updateDraft error:", err);
     res.status(500).json({ error: "Update failed" });
   }
 };
 
-
-
-// ==============================
-// ✅ SEND DRAFT (Zendesk)
-// ==============================
 const sendDraft = async (req, res) => {
   try {
     const { draft_id } = req.body;
@@ -315,21 +335,19 @@ const sendDraft = async (req, res) => {
     res.json({ message: "Reply sent via Zendesk" });
 
   } catch (err) {
-    console.error("❌ sendDraft error:", err);
     res.status(500).json({ error: err.message });
   }
 };
 
-
-
 // ==============================
-// ✅ EXPORT ALL
+// EXPORT
 // ==============================
 module.exports = {
   createTicket,
-  getAllTicketsofUser,   // ✅ restored
-  getSignals,            // ✅ restored
+  getAllTicketsofUser,
+  getSignals,
   getDraftsByRole,
   updateDraft,
   sendDraft,
+  getAudioTickets,
 };
