@@ -1,20 +1,25 @@
 require("dotenv").config({ path: __dirname + "/.env" });
+
 const express = require("express");
 const cors = require("cors");
 
 const pool = require("./config/database");
-const { driver: neo4jDriver, getSession } = require("./config/neo4j"); // ✅ Neo4j
+const { driver: neo4jDriver } = require("./config/neo4j");
+
 const userRoutes = require("./routes/user.Routes");
 const emailRoutes = require("./routes/email.Routes");
 const chatRoutes = require("./routes/chat.Routes");
 const ticketController = require("./controllers/ticketController");
-const graphRoutes = require("./routes/graph.Routes");   // import
-
+const graphRoutes = require("./routes/graph.Routes");
+const memoryRoutes = require("./routes/memory.Routes");
 
 const app = express();
 
+/* -------------------- MIDDLEWARE -------------------- */
 app.use(cors());
+
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
+
 app.use(
   express.json({
     limit: "50mb",
@@ -24,14 +29,16 @@ app.use(
   })
 );
 
+// Handle JSON parse errors
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && err.status === 400 && "body" in err) {
     req.bodyParseError = err;
+
     try {
       const raw = req.rawBody || "";
       const match = raw.match(/\{[\s\S]*\}/);
       req.body = match ? JSON.parse(match[0]) : {};
-    } catch (parseError) {
+    } catch {
       req.body = {};
     }
 
@@ -40,33 +47,69 @@ app.use((err, req, res, next) => {
   next(err);
 });
 
+/* -------------------- ROUTES -------------------- */
 app.get("/", (req, res) => res.json({ message: "Server Running" }));
 
-app.use("/api/graph", graphRoutes);                      // register
-
+app.use("/api/memory", memoryRoutes);
+app.use("/api/graph", graphRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/email", emailRoutes);
 app.use("/api/chat", chatRoutes);
 
+/* -------------------- TICKETS -------------------- */
 app.post("/api/tickets", ticketController.createTicket);
 app.get("/api/tickets/:userId", ticketController.getAllTicketsofUser);
 app.get("/api/audio-tickets/:userId", ticketController.getAudioTickets);
 app.get("/api/audio-tickets/:userId/:ticketId/stream", ticketController.streamAudioTicket);
+
 app.post("/api/signals", ticketController.getSignals);
 app.post("/api/tickets/drafts", ticketController.getDraftsByRole);
 app.post("/api/tickets/drafts/update", ticketController.updateDraft);
 app.post("/api/tickets/drafts/send", ticketController.sendDraft);
 
+/* -------------------- SERVER START -------------------- */
 const PORT = process.env.PORT || 5000;
-console.log("ENV CHECK:", process.env.DB_USER);
 
 app.listen(PORT, async () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
+
+  /* -------- MYSQL CONNECTION -------- */
   try {
     const conn = await pool.getConnection();
-    console.log("Database connected!");
+    console.log("✅ MySQL Database connected!");
     conn.release();
   } catch (err) {
-    console.error("Database connection failed:", err.message);
+    console.error("❌ MySQL connection failed:", err.message);
   }
+
+  /* -------- NEO4J CONNECTION -------- */
+  try {
+    const session = neo4jDriver.session();
+    await session.run("RETURN 1"); // simple test query
+    console.log("✅ Neo4j connected!");
+    await session.close();
+  } catch (err) {
+    console.error("❌ Neo4j connection failed:", err.message);
+  }
+});
+
+/* -------------------- CLEAN SHUTDOWN -------------------- */
+process.on("SIGINT", async () => {
+  console.log("\n🛑 Shutting down server...");
+
+  try {
+    await neo4jDriver.close();
+    console.log("✅ Neo4j connection closed");
+  } catch (err) {
+    console.error("Error closing Neo4j:", err.message);
+  }
+
+  try {
+    await pool.end();
+    console.log("✅ MySQL pool closed");
+  } catch (err) {
+    console.error("Error closing MySQL:", err.message);
+  }
+
+  process.exit(0);
 });
