@@ -17,12 +17,13 @@ const getOverview = async (req, res) => {
   try {
     const rows = await runQuery(`
       MATCH (a:Account)-[:HAS_TICKET]->(t:Ticket)-[:HAS_SIGNAL]->(s:Signal)
+      WITH a, t, s
+      LIMIT 400
       RETURN 
         a.id AS account_id,
         t.id AS ticket_id,
         s.id AS signal_id,
         s.type AS signal_type
-      LIMIT 500
     `);
 
     // Build nodes + links for frontend graph
