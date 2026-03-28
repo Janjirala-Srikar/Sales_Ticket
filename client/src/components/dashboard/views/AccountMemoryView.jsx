@@ -1036,6 +1036,9 @@ export default function AccountMemoryView() {
   const displayed = searchResults
     ? (timeline || []).filter((e) => searchResults.some((r) => r.ticketId === e.id))
     : filtered;
+  const accountCount = accounts?.length || 0;
+  const selectedSignalTypes = new Set((timeline || []).map((event) => event.dominantSignal).filter(Boolean)).size;
+  const activityLabel = searchResults ? "Search Results" : "Visible Events";
 
   return (
     <div className="ticket-health-layout" style={{ fontFamily: "system-ui, -apple-system, sans-serif" }}>
@@ -1046,6 +1049,64 @@ export default function AccountMemoryView() {
         }
       `}</style>
 
+      <div className="content-card ticket-health-summary">
+        <h2>Account Memory &amp; Timeline</h2>
+        <p>Chronological record of every customer touchpoint with AI summaries, follow-ups, and visual signal context.</p>
+
+        <div className="ticket-summary-grid">
+          <div style={summaryCardStyle}>
+            <span style={summaryLabelStyle}>Accounts</span>
+            <strong style={summaryValueStyle}>{accountCount || "—"}</strong>
+          </div>
+          <div style={summaryCardStyle}>
+            <span style={summaryLabelStyle}>Selected Account</span>
+            <strong style={{ ...summaryValueStyle, fontSize: 18 }}>{selected || "Choose one"}</strong>
+          </div>
+          <div style={summaryCardStyle}>
+            <span style={summaryLabelStyle}>{activityLabel}</span>
+            <strong style={summaryValueStyle}>{selected ? displayed.length : "—"}</strong>
+          </div>
+          <div style={summaryCardStyle}>
+            <span style={summaryLabelStyle}>Signal Types</span>
+            <strong style={summaryValueStyle}>{selected ? selectedSignalTypes : "—"}</strong>
+          </div>
+        </div>
+
+        <div style={{ marginTop: 18 }}>
+          <div style={modePillGroupStyle}>
+            <button type="button" onClick={() => setViewMode("table")} style={MODE_PILL_STYLE(viewMode === "table")}>
+              Timeline
+            </button>
+            <button type="button" onClick={() => setViewMode("viz")} style={MODE_PILL_STYLE(viewMode === "viz")}>
+              Visualizations
+            </button>
+          </div>
+        </div>
+
+        {viewMode === "table" ? (
+          <div className="ticket-summary-grid" style={{ marginTop: 14 }}>
+            <label className="ticket-filter-card">
+              <span className="ticket-filter-card__label">Account</span>
+              {loadingAccts
+                ? <div style={{ ...skeletonStyle(42), width: "100%" }} />
+                : <AccountSelector
+                    accounts={accounts || []}
+                    selected={selected}
+                    onSelect={(id) => { setSelected(id); setSearchResults(null); setFilter("all"); }}
+                  />
+              }
+            </label>
+
+            <label className="ticket-filter-card" style={{ gridColumn: "span 2" }}>
+              <span className="ticket-filter-card__label">Search Timeline</span>
+              <SearchBar accountId={selected} onResult={setSearchResults} />
+            </label>
+          </div>
+        ) : null}
+      </div>
+
+      {false && (
+      <>
       {/* Page header */}
       <div style={{ marginBottom: 18 }}>
         <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
@@ -1080,11 +1141,14 @@ export default function AccountMemoryView() {
       </div>
 
       {/* ── Visualization mode ── */}
+      </>
+      )}
+
       {viewMode === "viz" && (
         vizLoading ? (
-          <div style={skeletonStyle(360)} />
+          <div className="content-card"><div style={skeletonStyle(360)} /></div>
         ) : vizError ? (
-          <div style={{ ...cardStyle, textAlign: "center", color: "var(--error-text)" }}>
+          <div className="content-card" style={{ textAlign: "center", color: "var(--error-text)" }}>
             {vizError}
           </div>
         ) : (
@@ -1099,6 +1163,8 @@ export default function AccountMemoryView() {
       {/* ── Table / timeline mode ── */}
       {viewMode === "table" && (
         <>
+          {false && (
+          <>
           {/* Toolbar */}
           <div style={{ display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap", alignItems: "center" }}>
             {loadingAccts
@@ -1121,9 +1187,12 @@ export default function AccountMemoryView() {
             )}
           </div>
 
+          </>
+          )}
+
           {/* Empty state */}
           {!selected ? (
-            <div style={{ ...cardStyle, textAlign: "center", padding: "56px 24px" }}>
+            <div className="content-card" style={{ textAlign: "center", padding: "56px 24px" }}>
               <div style={{ fontSize: 36, marginBottom: 10 }}>🏢</div>
               <div style={{ fontSize: 15, fontWeight: 500, color: "var(--text-body)" }}>Select an account above</div>
               <div style={{ fontSize: 13, color: "var(--text-muted)", marginTop: 4 }}>Timeline, AI summary and action items will appear here</div>
@@ -1138,16 +1207,33 @@ export default function AccountMemoryView() {
 
               {/* Timeline column */}
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                <div style={{ ...cardStyle, padding: "14px 16px" }}>
+                <div className="content-card" style={{ padding: "14px 16px" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
                     <span style={{ fontSize: 13, fontWeight: 600, color: "var(--text-primary)" }}>
                       {searchResults ? `Search · ${displayed.length} results` : `Timeline · ${displayed.length} events`}
                     </span>
+                    {searchResults && (
+                      <button
+                        onClick={() => setSearchResults(null)}
+                        style={{
+                          padding: "8px 12px",
+                          fontSize: 12,
+                          borderRadius: "var(--radius-md)",
+                          border: "1px solid var(--border-default)",
+                          background: "var(--card-bg)",
+                          color: "var(--text-body)",
+                          cursor: "pointer",
+                          fontFamily: "inherit",
+                        }}
+                      >
+                        Clear search
+                      </button>
+                    )}
                   </div>
                   {!searchResults && <FilterBar active={filter} onChange={setFilter} />}
                 </div>
 
-                <div style={{ ...cardStyle, padding: "20px 20px 4px" }}>
+                <div className="content-card" style={{ padding: "20px 20px 4px" }}>
                   {loadingTL ? (
                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                       {[1, 2, 3].map((i) => <div key={i} style={skeletonStyle(100)} />)}
@@ -1188,3 +1274,50 @@ export default function AccountMemoryView() {
     </div>
   );
 }
+
+const summaryCardStyle = {
+  background: "var(--bg-surface)",
+  border: "1px solid var(--card-border)",
+  borderRadius: "var(--radius-lg)",
+  padding: "14px 16px",
+  display: "grid",
+  gap: 4,
+};
+
+const summaryLabelStyle = {
+  color: "var(--text-muted)",
+  fontSize: 12,
+  textTransform: "uppercase",
+  letterSpacing: "0.08em",
+};
+
+const summaryValueStyle = {
+  color: "var(--blue-primary)",
+  fontSize: 22,
+  lineHeight: 1.1,
+};
+
+const modePillGroupStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  gap: 6,
+  padding: 4,
+  marginTop: 6,
+  borderRadius: 999,
+  background: "var(--bg-subtle)",
+  border: "1px solid var(--border-subtle)",
+  width: "fit-content",
+};
+
+const MODE_PILL_STYLE = (active) => ({
+  border: "none",
+  borderRadius: 999,
+  padding: "8px 14px",
+  background: active ? "var(--blue-primary)" : "transparent",
+  color: active ? "var(--text-on-blue)" : "var(--text-body)",
+  fontSize: 12,
+  fontWeight: 700,
+  fontFamily: "'Plus Jakarta Sans', sans-serif",
+  cursor: "pointer",
+  boxShadow: active ? "var(--shadow-sm)" : "none",
+});

@@ -456,7 +456,30 @@ export default function AccountHealthView() {
       .finally(() => setDetailsLoading(false));
   }, [selectedNode]);
 
-  if (loading) return <div className="content-card"><p style={{ color: "var(--text-muted)" }}>Loading...</p></div>;
+  if (loading) {
+    return (
+      <div className="ticket-health-layout" style={{ minHeight: 700, display: "grid", placeItems: "center" }}>
+        <div style={{ display: "grid", justifyItems: "center", gap: 12 }}>
+          <div
+            style={{
+              width: 42,
+              height: 42,
+              borderRadius: "50%",
+              border: "3px solid var(--border-subtle)",
+              borderTopColor: "var(--blue-primary)",
+              animation: "accountHealthSpinner 0.8s linear infinite",
+            }}
+          />
+          <p style={{ margin: 0, color: "var(--text-muted)", fontSize: 14 }}>Loading account health...</p>
+        </div>
+        <style>{`
+          @keyframes accountHealthSpinner {
+            to { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    );
+  }
   if (error) return <div className="content-card"><p style={{ color: "var(--error-text)" }}>Error: {error}</p></div>;
 
   return (
