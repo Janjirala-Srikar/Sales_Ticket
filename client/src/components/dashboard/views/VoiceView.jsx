@@ -71,6 +71,14 @@ export default function VoiceView() {
     [audioTickets]
   );
 
+  const zendeskContextStatus = useMemo(() => {
+    if (!zendeskContext) return 'Pending';
+    if (zendeskContext.ready) return 'Ready';
+    if (zendeskContext.fallback) return 'Fallback';
+    if (zendeskContext.missing_credentials) return 'Missing creds';
+    return 'Unavailable';
+  }, [zendeskContext]);
+
   return (
     <div className="voice-view">
       <section className="voice-hero">
@@ -98,7 +106,7 @@ export default function VoiceView() {
           </div>
           <div className="voice-stat">
             <span>Zendesk Context</span>
-            <strong>{zendeskContext?.ready ? 'Ready' : 'Pending'}</strong>
+            <strong>{zendeskContextStatus}</strong>
           </div>
         </div>
       </section>

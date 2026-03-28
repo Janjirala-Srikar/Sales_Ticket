@@ -76,7 +76,15 @@ export function AuthProvider({ children }) {
         return fallbackContext;
       }
 
-      throw error;
+      const fallbackContext = {
+        ready: false,
+        audio_proxy_base: '/api/audio-tickets',
+        initialized_at: new Date().toISOString(),
+        fallback: true,
+        error: error?.response?.data?.message || error.message,
+      };
+      setZendeskContext(fallbackContext);
+      return fallbackContext;
     }
   };
 
@@ -84,7 +92,6 @@ export function AuthProvider({ children }) {
     if (!token) return;
 
     initializeZendeskContext(token).catch((error) => {
-      console.error('Failed to initialize Zendesk context:', error);
       setZendeskContext(null);
     });
   }, [token]);

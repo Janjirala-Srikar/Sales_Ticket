@@ -19,6 +19,12 @@ function safeString(value) {
 }
 
 function buildZendeskAuthHeader() {
+  if (!process.env.ZENDESK_EMAIL || !process.env.ZENDESK_API_TOKEN) {
+    throw new Error(
+      "Zendesk credentials are missing. Set ZENDESK_EMAIL and ZENDESK_API_TOKEN in server/.env"
+    );
+  }
+
   return (
     "Basic " +
     Buffer.from(
@@ -28,6 +34,14 @@ function buildZendeskAuthHeader() {
 }
 
 async function fetchZendeskResource(url, accept = "*/*") {
+  const host = (() => {
+    try {
+      return new URL(url).host;
+    } catch (error) {
+      return "unknown-host";
+    }
+  })();
+
   const response = await fetch(url, {
     headers: {
       Authorization: buildZendeskAuthHeader(),
@@ -38,6 +52,12 @@ async function fetchZendeskResource(url, accept = "*/*") {
 
   if (!response.ok) {
     const body = await response.text().catch(() => "");
+    if (response.status === 401) {
+      throw new Error(
+        `Zendesk authentication failed for ${host}. Check that ZENDESK_EMAIL belongs to an agent/admin on this Zendesk account, ZENDESK_API_TOKEN is valid, and API token access is enabled in Zendesk Admin Center.`
+      );
+    }
+
     throw new Error(
       `Zendesk request failed (${response.status})${body ? `: ${body}` : ""}`
     );
@@ -394,7 +414,9 @@ const streamAudioTicket = async (req, res) => {
     stream.pipe(res);
   } catch (err) {
     console.error("❌ streamAudioTicket error:", err);
-    res.status(500).json({ error: "Failed to stream audio ticket" });
+    res.status(500).json({
+      error: err.message || "Failed to stream audio ticket",
+    });
   }
 };
 

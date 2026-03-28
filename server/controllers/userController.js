@@ -135,26 +135,32 @@ const initializeZendeskContext = async (req, res) => {
       process.env.ZENDESK_EMAIL && process.env.ZENDESK_API_TOKEN
     );
 
-    if (!hasZendeskCredentials) {
-      return res.status(500).json({
-        message: "Zendesk credentials are missing on the server",
-        zendesk_context: {
-          ready: false,
-        },
-      });
-    }
-
-    res.json({
-      message: "Zendesk audio context initialized",
+    return res.json({
+      message: hasZendeskCredentials
+        ? "Zendesk audio context configured"
+        : "Zendesk credentials are missing on the server",
       zendesk_context: {
-        ready: true,
+        ready: hasZendeskCredentials,
+        configured: hasZendeskCredentials,
         audio_proxy_base: "/api/audio-tickets",
         initialized_at: new Date().toISOString(),
         user_id: req.user?.id || null,
+        missing_credentials: !hasZendeskCredentials,
       },
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("initializeZendeskContext error:", error);
+    return res.json({
+      message: "Zendesk context fallback applied",
+      zendesk_context: {
+        ready: false,
+        audio_proxy_base: "/api/audio-tickets",
+        initialized_at: new Date().toISOString(),
+        user_id: req.user?.id || null,
+        fallback: true,
+        error: error.message,
+      },
+    });
   }
 };
 
