@@ -7,6 +7,7 @@ const {verifyToken} = require("../middlewares/authMiddleware");
 // Auth routes
 router.post("/register", userController.register);
 router.post("/login", userController.login);
+router.get("/zendesk-context", verifyToken, userController.initializeZendeskContext);
 
 // IAM-style routes
 router.post("/create-role", verifyToken, userController.createRole);

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { LuFileText, LuFolderOpen, LuPencilLine, LuSend, LuSparkles } from 'react-icons/lu';
 import { useAuth } from '../../../context/AuthContext';
 import './PlaybooksView.css';
@@ -27,6 +28,88 @@ function formatDraftDate(value) {
   return new Intl.DateTimeFormat('en-IN', { dateStyle: 'medium' }).format(date);
 }
 
+function getPreviewText(value, limit = 180) {
+  const normalized = String(value || '').replace(/\s+/g, ' ').trim();
+  if (!normalized) return 'No draft content available.';
+  if (normalized.length <= limit) return normalized;
+  return `${normalized.slice(0, limit).trimEnd()}...`;
+}
+
+function DraftDetailModal({ draft, userRole, onClose, onEdit, onSend, loading }) {
+  if (!draft) return null;
+
+  return createPortal(
+    <div className="ticket-modal-backdrop" onClick={onClose}>
+      <div className="ticket-modal" onClick={(event) => event.stopPropagation()}>
+        <div className="ticket-modal__header">
+          <div className="playbooks-modal__header-row">
+            <div>
+              <div className="playbooks-modal__eyebrow">
+                <span>{formatSignalLabel(draft.signal_type)}</span>
+                <span>{formatDraftDate(draft.created_at)}</span>
+              </div>
+              <h2>Ticket #{draft.zendesk_ticket_id}</h2>
+            </div>
+
+            <span className={`playbooks-status playbooks-modal__status playbooks-status--${draft.status || 'default'}`}>
+              {draft.status || 'draft'}
+            </span>
+          </div>
+        </div>
+
+        <div className="ticket-detail-grid">
+          <div className="ticket-detail-card">
+            <span className="ticket-detail-card__label">Role</span>
+            <strong className="ticket-detail-card__value">
+              {userRole ? formatSignalLabel(userRole) : 'Team member'}
+            </strong>
+          </div>
+          <div className="ticket-detail-card">
+            <span className="ticket-detail-card__label">Created</span>
+            <strong className="ticket-detail-card__value">{formatDraftDate(draft.created_at)}</strong>
+          </div>
+        </div>
+
+        <div className="ticket-message">
+          <div className="ticket-message__label">Draft Content</div>
+          <div className="ticket-message__body">{draft.draft_content || 'No draft content available.'}</div>
+        </div>
+
+        <div className="playbooks-modal__actions">
+          {draft.status !== 'sent' && (
+            <>
+              <button
+                type="button"
+                className="playbooks-button playbooks-button--secondary"
+                onClick={() => onEdit(draft)}
+                disabled={loading}
+              >
+                Edit draft
+              </button>
+              <button
+                type="button"
+                className="playbooks-button playbooks-button--primary"
+                onClick={() => onSend(draft.id)}
+                disabled={loading}
+              >
+                Send to Zendesk
+              </button>
+            </>
+          )}
+          <button
+            type="button"
+            className="playbooks-button playbooks-button--ghost"
+            onClick={onClose}
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 export default function PlaybooksView() {
   const { user, token } = useAuth();
   const [drafts, setDrafts] = useState([]);
@@ -36,6 +119,7 @@ export default function PlaybooksView() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [filter, setFilter] = useState('all');
+  const [selectedDraft, setSelectedDraft] = useState(null);
 
   useEffect(() => {
     if (!user?.id || !user?.role) return;
@@ -71,6 +155,7 @@ export default function PlaybooksView() {
   }, [token, user]);
 
   const handleEditClick = (draft) => {
+    setSelectedDraft(null);
     setEditingDraft(draft.id);
     setEditContent(draft.draft_content);
   };
@@ -98,6 +183,11 @@ export default function PlaybooksView() {
             ? { ...draft, draft_content: editContent, status: 'edited' }
             : draft
         )
+      );
+      setSelectedDraft((current) =>
+        current?.id === draftId
+          ? { ...current, draft_content: editContent, status: 'edited' }
+          : current
       );
 
       setEditingDraft(null);
@@ -133,6 +223,7 @@ export default function PlaybooksView() {
       setDrafts((current) =>
         current.map((draft) => (draft.id === draftId ? { ...draft, status: 'sent' } : draft))
       );
+      setSelectedDraft((current) => (current?.id === draftId ? { ...current, status: 'sent' } : current));
 
       setSuccess('Reply sent to customer via Zendesk');
       setTimeout(() => setSuccess(''), 3000);
@@ -169,7 +260,7 @@ export default function PlaybooksView() {
   };
 
   return (
-    <div className="playbooks-shell">
+    <div className="playbooks-shell mb-5">
       <section className="playbooks-hero">
         <div>
           <p className="playbooks-hero__eyebrow">AI Playbooks</p>
@@ -228,7 +319,24 @@ export default function PlaybooksView() {
       ) : (
         <div className="playbooks-grid">
           {filteredDrafts.map((draft) => (
-            <article key={draft.id} className="playbooks-card">
+            <article
+              key={draft.id}
+              className={`playbooks-card ${editingDraft === draft.id ? '' : 'playbooks-card--interactive'}`}
+              onClick={editingDraft === draft.id ? undefined : () => setSelectedDraft(draft)}
+              onKeyDown={
+                editingDraft === draft.id
+                  ? undefined
+                  : (event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        setSelectedDraft(draft);
+                      }
+                    }
+              }
+              role={editingDraft === draft.id ? undefined : 'button'}
+              tabIndex={editingDraft === draft.id ? undefined : 0}
+              aria-label={editingDraft === draft.id ? undefined : `Open full draft for ticket ${draft.zendesk_ticket_id}`}
+            >
               <div className="playbooks-card__top">
                 <div className="playbooks-card__signal">
                   <span className="playbooks-card__signal-label">{formatSignalLabel(draft.signal_type)}</span>
@@ -284,17 +392,18 @@ export default function PlaybooksView() {
               ) : (
                 <>
                   <div className="playbooks-copy">
-                    <p>{draft.draft_content}</p>
+                    <p>{getPreviewText(draft.draft_content)}</p>
                   </div>
 
-                  {draft.status === 'sent' ? (
-                    <div className="playbooks-sent">Sent to customer</div>
-                  ) : (
+                  {draft.status !== 'sent' && (
                     <div className="playbooks-actions">
                       <button
                         type="button"
                         className="playbooks-button playbooks-button--secondary"
-                        onClick={() => handleEditClick(draft)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleEditClick(draft);
+                        }}
                         disabled={loading}
                       >
                         Edit draft
@@ -302,7 +411,10 @@ export default function PlaybooksView() {
                       <button
                         type="button"
                         className="playbooks-button playbooks-button--primary"
-                        onClick={() => handleSendDraft(draft.id)}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          void handleSendDraft(draft.id);
+                        }}
                         disabled={loading}
                       >
                         Send to Zendesk
@@ -315,6 +427,15 @@ export default function PlaybooksView() {
           ))}
         </div>
       )}
+
+      <DraftDetailModal
+        draft={selectedDraft}
+        userRole={user?.role}
+        onClose={() => setSelectedDraft(null)}
+        onEdit={handleEditClick}
+        onSend={handleSendDraft}
+        loading={loading}
+      />
     </div>
   );
 }

@@ -182,7 +182,7 @@ function PenguinBg({ mouseX, mouseY, hasError, isLoading }) {
 export default function AuthPage({ defaultMode = 'login' }) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { API_BASE, login } = useAuth();
+  const { API_BASE, login, initializeZendeskContext } = useAuth();
 
   const [mode, setMode] = useState(defaultMode);
   const [name, setName] = useState('');
@@ -228,7 +228,13 @@ export default function AuthPage({ defaultMode = 'login' }) {
       const profileEmail = profile.email || email;
       if (!token) { setError('Token missing from response'); return; }
       login(token, { ...profile, name: profileName, email: profileEmail, username: profileName });
-      navigate('/dashboard', { replace: true });
+      initializeZendeskContext(token)
+        .catch((err) => {
+          console.error('Zendesk context init failed after login:', err);
+        })
+        .finally(() => {
+          navigate('/dashboard', { replace: true });
+        });
     },
     onError: (err) => {
       const apiMessage = err.response?.data?.message;
@@ -272,7 +278,13 @@ export default function AuthPage({ defaultMode = 'login' }) {
       const profile = data?.user || {};
       if (!token) { setError('Token missing from response'); return; }
       login(token, { ...profile, name: profile.name, email: profile.email, username: profile.name });
-      navigate('/dashboard', { replace: true });
+      initializeZendeskContext(token)
+        .catch((err) => {
+          console.error('Zendesk context init failed after team login:', err);
+        })
+        .finally(() => {
+          navigate('/dashboard', { replace: true });
+        });
     },
     onError: (err) => {
       const apiMessage = err.response?.data?.message;

@@ -166,6 +166,23 @@
   box-shadow: var(--shadow-md);
 }
 
+.playbooks-card--interactive {
+  cursor: pointer;
+  transition: transform 140ms ease, border-color 140ms ease, box-shadow 140ms ease;
+}
+
+.playbooks-card--interactive:hover {
+  transform: translateY(-2px);
+  border-color: var(--blue-muted);
+  box-shadow: 0 18px 44px rgba(15, 23, 42, 0.12);
+}
+
+.playbooks-card--interactive:focus-visible {
+  outline: none;
+  border-color: var(--blue-primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue-primary) 16%, transparent);
+}
+
 .playbooks-card__top {
   display: flex;
   justify-content: space-between;
@@ -267,7 +284,6 @@
   border: 1px solid var(--border-subtle);
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.88);
-  min-height: 180px;
 }
 
 .playbooks-copy p {
@@ -348,17 +364,41 @@
   background: var(--btn-secondary-hover);
 }
 
-.playbooks-sent {
-  display: inline-flex;
+.playbooks-button--ghost {
+  background: transparent;
+  color: var(--text-body);
+  border-color: var(--border-subtle);
+}
+
+.playbooks-button--ghost:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+.playbooks-modal__header-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.playbooks-modal__eyebrow {
+  display: flex;
   align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  border-radius: 14px;
-  background: var(--success-bg);
-  border: 1px solid var(--success-border);
-  color: var(--success-text);
-  font-size: 14px;
-  font-weight: 700;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.playbooks-modal__status {
+  flex-shrink: 0;
+}
+
+.playbooks-modal__actions {
+  display: flex;
+  gap: 10px;
 }
 
 .playbooks-empty {
@@ -429,6 +469,12 @@
   }
 
   .playbooks-actions {
+    flex-direction: column;
+  }
+
+  .playbooks-modal__header-row,
+  .playbooks-modal__eyebrow,
+  .playbooks-modal__actions {
     flex-direction: column;
   }
 }

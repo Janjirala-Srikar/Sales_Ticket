@@ -10,6 +10,10 @@ export function AuthProvider({ children }) {
     const stored = localStorage.getItem('ts_user');
     return stored ? JSON.parse(stored) : null;
   });
+  const [zendeskContext, setZendeskContext] = useState(() => {
+    const stored = localStorage.getItem('ts_zendesk_context');
+    return stored ? JSON.parse(stored) : null;
+  });
 
   useEffect(() => {
     if (token) {
@@ -27,15 +31,63 @@ export function AuthProvider({ children }) {
     }
   }, [user]);
 
+  useEffect(() => {
+    if (zendeskContext) {
+      localStorage.setItem('ts_zendesk_context', JSON.stringify(zendeskContext));
+    } else {
+      localStorage.removeItem('ts_zendesk_context');
+    }
+  }, [zendeskContext]);
+
   const logout = () => {
     setToken('');
     setUser(null);
+    setZendeskContext(null);
   };
 
   const login = (nextToken, profile) => {
     setToken(nextToken);
     setUser(profile);
   };
+
+  const initializeZendeskContext = async (nextToken = token) => {
+    if (!nextToken) {
+      setZendeskContext(null);
+      return null;
+    }
+
+    try {
+      const response = await axios.get(`${API_BASE}/users/zendesk-context`, {
+        headers: { Authorization: `Bearer ${nextToken}` },
+      });
+
+      const nextContext = response.data?.zendesk_context || null;
+      setZendeskContext(nextContext);
+      return nextContext;
+    } catch (error) {
+      if (error?.response?.status === 404) {
+        const fallbackContext = {
+          ready: true,
+          audio_proxy_base: '/api/audio-tickets',
+          initialized_at: new Date().toISOString(),
+          fallback: true,
+        };
+        setZendeskContext(fallbackContext);
+        return fallbackContext;
+      }
+
+      throw error;
+    }
+  };
+
+  useEffect(() => {
+    if (!token) return;
+
+    initializeZendeskContext(token).catch((error) => {
+      console.error('Failed to initialize Zendesk context:', error);
+      setZendeskContext(null);
+    });
+  }, [token]);
 
   const authAxios = useMemo(() => {
     const instance = axios.create({
@@ -52,10 +104,12 @@ export function AuthProvider({ children }) {
       isAuthenticated: Boolean(token),
       login,
       logout,
+      zendeskContext,
+      initializeZendeskContext,
       authAxios,
       API_BASE,
     }),
-    [token, user, authAxios]
+    [token, user, zendeskContext, authAxios]
   );
 
   return (

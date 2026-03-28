@@ -129,9 +129,39 @@ const roleLogin = async (req, res) => {
   }
 };
 
+const initializeZendeskContext = async (req, res) => {
+  try {
+    const hasZendeskCredentials = Boolean(
+      process.env.ZENDESK_EMAIL && process.env.ZENDESK_API_TOKEN
+    );
+
+    if (!hasZendeskCredentials) {
+      return res.status(500).json({
+        message: "Zendesk credentials are missing on the server",
+        zendesk_context: {
+          ready: false,
+        },
+      });
+    }
+
+    res.json({
+      message: "Zendesk audio context initialized",
+      zendesk_context: {
+        ready: true,
+        audio_proxy_base: "/api/audio-tickets",
+        initialized_at: new Date().toISOString(),
+        user_id: req.user?.id || null,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 module.exports = {
   register,
   login,
   createRole,
-  roleLogin
+  roleLogin,
+  initializeZendeskContext,
 };

@@ -1,3 +1,4 @@
+const { Readable } = require("stream");
 const pool = require("../config/database");
 const { classifyTicket } = require("../utils/groqClassifier");
 const { generateDraftFromSignal } = require("../utils/aiDraftGenerator");
@@ -15,6 +16,77 @@ function safeString(value) {
     return value;
   }
   return null;
+}
+
+function buildZendeskAuthHeader() {
+  return (
+    "Basic " +
+    Buffer.from(
+      `${process.env.ZENDESK_EMAIL}/token:${process.env.ZENDESK_API_TOKEN}`
+    ).toString("base64")
+  );
+}
+
+async function fetchZendeskResource(url, accept = "*/*") {
+  const response = await fetch(url, {
+    headers: {
+      Authorization: buildZendeskAuthHeader(),
+      Accept: accept,
+    },
+    redirect: "follow",
+  });
+
+  if (!response.ok) {
+    const body = await response.text().catch(() => "");
+    throw new Error(
+      `Zendesk request failed (${response.status})${body ? `: ${body}` : ""}`
+    );
+  }
+
+  return response;
+}
+
+function extractVoicePayload(payload) {
+  if (!payload || typeof payload !== "object") return null;
+  if (payload.call && typeof payload.call === "object") return payload.call;
+  if (Array.isArray(payload.calls) && payload.calls[0] && typeof payload.calls[0] === "object") {
+    return payload.calls[0];
+  }
+  return payload;
+}
+
+function extractRecordingUrl(payload) {
+  const voicePayload = extractVoicePayload(payload);
+
+  return (
+    safeString(voicePayload?.recording_url) ||
+    safeString(voicePayload?.recording?.url) ||
+    safeString(payload?.recording_url) ||
+    null
+  );
+}
+
+async function fetchVoiceResponse(audioUrl) {
+  if (!audioUrl) return null;
+
+  const response = await fetchZendeskResource(audioUrl, "application/json, text/plain;q=0.9, */*;q=0.8");
+  const contentType = response.headers.get("content-type") || "";
+  const text = await response.text();
+
+  if (!text) return null;
+  if (contentType.includes("application/json")) {
+    return JSON.parse(text);
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch (err) {
+    return { raw_response: text };
+  }
+}
+
+function buildPlaybackUrl(req, userId, ticketId) {
+  return `${req.protocol}://${req.get("host")}/api/audio-tickets/${userId}/${ticketId}/stream`;
 }
 
 // ==============================
@@ -232,11 +304,97 @@ const getAudioTickets = async (req, res) => {
       [userId]
     );
 
-    res.json({ audio_tickets: rows });
+    const audioTickets = await Promise.all(
+      rows.map(async (row) => {
+        try {
+          const voiceResponse = await fetchVoiceResponse(row.audio_url);
+          return {
+            ...row,
+            playback_url: row.audio_url
+              ? buildPlaybackUrl(req, userId, row.id)
+              : null,
+            voice_response: voiceResponse,
+          };
+        } catch (err) {
+          console.error("❌ fetchVoiceResponse error:", err.message);
+          return {
+            ...row,
+            playback_url: row.audio_url
+              ? buildPlaybackUrl(req, userId, row.id)
+              : null,
+            voice_response: null,
+            voice_error: err.message,
+          };
+        }
+      })
+    );
+
+    res.json({ audio_tickets: audioTickets });
 
   } catch (err) {
     console.error("❌ getAudioTickets error:", err);
     res.status(500).json({ error: "Failed to fetch audio tickets" });
+  }
+};
+
+const streamAudioTicket = async (req, res) => {
+  try {
+    const { userId, ticketId } = req.params;
+
+    const [rows] = await pool.execute(
+      `SELECT * FROM audio_tickets
+       WHERE id = ? AND user_id = ?
+       LIMIT 1`,
+      [ticketId, userId]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ error: "Audio ticket not found" });
+    }
+
+    const audioTicket = rows[0];
+    if (!audioTicket.audio_url) {
+      return res.status(404).json({ error: "Audio URL not found for this ticket" });
+    }
+
+    let response = await fetchZendeskResource(
+      audioTicket.audio_url,
+      "audio/*, application/json;q=0.9, text/plain;q=0.8, */*;q=0.7"
+    );
+    let contentType = response.headers.get("content-type") || "";
+
+    if (!contentType.startsWith("audio/")) {
+      const payload = await response.json().catch(() => null);
+      const recordingUrl = extractRecordingUrl(payload);
+
+      if (!recordingUrl) {
+        return res.status(502).json({
+          error: "Recording URL missing in Zendesk response",
+          voice_response: payload,
+        });
+      }
+
+      response = await fetchZendeskResource(recordingUrl, "audio/*, */*;q=0.8");
+      contentType = response.headers.get("content-type") || "audio/mpeg";
+    }
+
+    res.setHeader("Content-Type", contentType || "audio/mpeg");
+
+    const contentLength = response.headers.get("content-length");
+    if (contentLength) {
+      res.setHeader("Content-Length", contentLength);
+    }
+
+    const disposition = response.headers.get("content-disposition");
+    if (disposition) {
+      res.setHeader("Content-Disposition", disposition);
+    }
+
+    const stream = Readable.fromWeb(response.body);
+    stream.pipe(res);
+  } catch (err) {
+    console.error("❌ streamAudioTicket error:", err);
+    res.status(500).json({ error: "Failed to stream audio ticket" });
   }
 };
 
@@ -350,4 +508,5 @@ module.exports = {
   updateDraft,
   sendDraft,
   getAudioTickets,
+  streamAudioTicket,
 };
