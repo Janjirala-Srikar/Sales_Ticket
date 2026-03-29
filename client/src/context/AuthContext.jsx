@@ -50,6 +50,10 @@ export function AuthProvider({ children }) {
     setUser(profile);
   };
 
+  const updateUser = (updates) => {
+    setUser((current) => (current ? { ...current, ...updates } : current));
+  };
+
   const initializeZendeskContext = async (nextToken = token) => {
     if (!nextToken) {
       setZendeskContext(null);
@@ -110,6 +114,7 @@ export function AuthProvider({ children }) {
       user,
       isAuthenticated: Boolean(token),
       login,
+      updateUser,
       logout,
       zendeskContext,
       initializeZendeskContext,

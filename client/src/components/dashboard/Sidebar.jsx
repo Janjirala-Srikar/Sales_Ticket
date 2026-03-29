@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LuChevronDown, LuLogOut } from 'react-icons/lu';
+import { LuChevronDown, LuLogOut, LuUserCog } from 'react-icons/lu';
 import { useAuth } from '../../context/AuthContext';
 import { DASH_LINKS, SETTINGS_GROUP_LINKS, SETTINGS_LINK } from './navItems';
 import SidebarLinkGroup from './SidebarLinkGroup';
@@ -21,6 +21,7 @@ function Sidebar({ sidebarOpen, setSidebarOpen, collapsed, onToggleCollapse }) {
 
   const displayName = user?.name || user?.username || (user?.email ? user.email.split('@')[0] : 'User');
   const role = user?.role;
+  const roleLabel = formatRoleLabel(role) || 'Root User';
   const isRootUser = !role;
   const settingsActive = location.pathname.startsWith(SETTINGS_LINK.path);
 
@@ -138,13 +139,14 @@ function Sidebar({ sidebarOpen, setSidebarOpen, collapsed, onToggleCollapse }) {
 
         <div className="sidebar-bottom sidebar-account">
           <div className="sidebar-account__card">
-            <div className="sidebar-account__avatar">{(displayName || 'U')[0]?.toUpperCase()}</div>
+            <div className="sidebar-account__avatar" title={roleLabel} aria-label={roleLabel}>{(displayName || 'U')[0]?.toUpperCase()}</div>
             {!collapsed && (
-              <div className="sidebar-account__meta">
-                <div className="sidebar-account__name">{displayName}</div>
-                {role && <div className="sidebar-account__role">{formatRoleLabel(role)}</div>}
+              <div className="sidebar-account__meta" title={roleLabel}>
+                <div className="sidebar-account__name" title={roleLabel}>{displayName}</div>
+                {role && <div className="sidebar-account__role" title={roleLabel}>{roleLabel}</div>}
               </div>
             )}
+           
             {!collapsed && (
               <button
                 type="button"
