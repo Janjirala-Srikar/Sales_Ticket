@@ -16,15 +16,16 @@ const memoryRoutes = require("./routes/memory.Routes");
 const app = express();
 
 /* -------------------- MIDDLEWARE -------------------- */
-const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || process.env.CLIENT_ORIGIN || "https://sales-ticket.vercel.app";
+// Support multiple allowed frontend origins via comma-separated env var
+const FRONTEND_ORIGINS = (process.env.FRONTEND_ORIGIN || process.env.CLIENT_ORIGIN || "https://sales-ticket.vercel.app").split(",").map(s => s.trim()).filter(Boolean);
+console.log("Allowed CORS origins:", FRONTEND_ORIGINS);
 app.use(
   cors({
     origin: (origin, cb) => {
       // Allow requests with no origin (e.g., server-to-server or same-origin)
       if (!origin) return cb(null, true);
-      if (origin === FRONTEND_ORIGIN) return cb(null, true);
-      // You can add additional allowed origins here if needed
-      return cb(new Error('Not allowed by CORS'));
+      if (FRONTEND_ORIGINS.includes(origin)) return cb(null, true);
+      return cb(new Error("Not allowed by CORS"));
     },
     credentials: true,
   })
