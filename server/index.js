@@ -18,18 +18,40 @@ const app = express();
 /* -------------------- MIDDLEWARE -------------------- */
 // Support multiple allowed frontend origins via comma-separated env var
 const FRONTEND_ORIGINS = (process.env.FRONTEND_ORIGIN || process.env.CLIENT_ORIGIN || "https://sales-ticket.vercel.app").split(",").map(s => s.trim()).filter(Boolean);
-console.log("Allowed CORS origins:", FRONTEND_ORIGINS);
-app.use(
-  cors({
-    origin: (origin, cb) => {
-      // Allow requests with no origin (e.g., server-to-server or same-origin)
-      if (!origin) return cb(null, true);
-      if (FRONTEND_ORIGINS.includes(origin)) return cb(null, true);
-      return cb(new Error("Not allowed by CORS"));
-    },
-    credentials: true,
-  })
-);
+const ALLOW_ALL_CORS = process.env.ALLOW_ALL_CORS === 'true';
+console.log("Allowed CORS origins:", FRONTEND_ORIGINS, "ALLOW_ALL_CORS=", ALLOW_ALL_CORS);
+
+if (ALLOW_ALL_CORS) {
+  // Temporary/testing mode: allow any origin
+  app.use(cors({ origin: true, credentials: true }));
+} else {
+  app.use(
+    cors({
+      origin: (origin, cb) => {
+        // Allow requests with no origin (e.g., server-to-server or same-origin)
+        if (!origin) return cb(null, true);
+        // Allow listed frontend origins
+        if (FRONTEND_ORIGINS.includes(origin)) return cb(null, true);
+        // Allow any localhost origin (useful during local development)
+        try {
+          const u = new URL(origin);
+          if (u.hostname === 'localhost') return cb(null, true);
+        } catch (e) {
+          // fallthrough
+        }
+        return cb(new Error('Not allowed by CORS'));
+      },
+      credentials: true,
+    })
+  );
+}
+
+// Log incoming origins for debugging
+app.use((req, res, next) => {
+  const o = req.headers.origin || 'no-origin';
+  if (o && o !== 'no-origin') console.log('Incoming request origin:', o, 'path:', req.path);
+  next();
+});
 
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
