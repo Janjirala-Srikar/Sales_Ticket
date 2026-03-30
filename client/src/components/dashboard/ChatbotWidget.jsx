@@ -258,7 +258,7 @@ export default function ChatbotWidget({ variant = 'floating' }) {
       {open && (
         <section
           id="chatbot-panel"
-          className={`chatbot-panel ${isFull ? 'chatbot-panel--full' : ''}`}
+          className={`chatbot-panel ${isFull ? 'chatbot-panel--full' : 'chatbot-panel--floating'}`}
           aria-label="Chat assistant"
         >
           {/* Header */}
@@ -267,8 +267,34 @@ export default function ChatbotWidget({ variant = 'floating' }) {
               <div className="chatbot-panel__avatar">
                 <LuBot />
               </div>
-              <div>
-                <h2 className="chatbot-panel__title">Sales Ticket Copilot</h2>
+              <div className="chatbot-panel__identity-copy">
+                <div className="chatbot-panel__title-row">
+                  <h2 className="chatbot-panel__title">Sales Ticket Copilot</h2>
+                  <div className="chatbot-panel__actions">
+                    {/* Clear button */}
+                    <button
+                      type="button"
+                      className="chatbot-panel__action-btn"
+                      onClick={handleClear}
+                      aria-label="Clear chat history"
+                      title="Clear chat"
+                      disabled={isSessionLoading}
+                    >
+                      <LuTrash2 />
+                    </button>
+
+                    {!isFull && (
+                      <button
+                        type="button"
+                        className="chatbot-panel__close"
+                        onClick={() => setOpen(false)}
+                        aria-label="Close chat assistant"
+                      >
+                        <LuX />
+                      </button>
+                    )}
+                  </div>
+                </div>
                 <p className="chatbot-panel__subtitle">
                   {isSessionLoading
                     ? 'Starting session…'
@@ -277,31 +303,6 @@ export default function ChatbotWidget({ variant = 'floating' }) {
                     : `Signed in as ${displayRole}`}
                 </p>
               </div>
-            </div>
-
-            <div className="chatbot-panel__actions">
-              {/* Clear button */}
-              <button
-                type="button"
-                className="chatbot-panel__action-btn"
-                onClick={handleClear}
-                aria-label="Clear chat history"
-                title="Clear chat"
-                disabled={isSessionLoading}
-              >
-                <LuTrash2 />
-              </button>
-
-              {!isFull && (
-                <button
-                  type="button"
-                  className="chatbot-panel__close"
-                  onClick={() => setOpen(false)}
-                  aria-label="Close chat assistant"
-                >
-                  <LuX />
-                </button>
-              )}
             </div>
           </div>
 

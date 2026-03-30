@@ -28,11 +28,11 @@ Support teams capture some of the most valuable customer signals in a company, b
 
 That creates several issues:
 
-- product teams miss repeated feature requests or friction themes
-- customer success teams discover churn risk too late
-- sales teams miss expansion or account risk context
-- teams have no shared memory across customer interactions
-- raw ticket volume makes manual triage slow and inconsistent
+- Product teams miss repeated feature requests or friction themes
+- Customer success teams discover churn risk too late
+- Sales teams miss expansion or account risk context
+- Teams have no shared memory across customer interactions
+- Raw ticket volume makes manual triage slow and inconsistent
 
 ---
 
@@ -51,38 +51,35 @@ Sales Ticket turns support activity into structured account intelligence:
 
 ---
 
-## Product Areas
-
-The dashboard currently includes:
-
-- **All Tickets** - ticket list with filters, role-specific signal views, and detail modals
-- **Account Health Score** - summary cards, graph visualization, signal distribution, and health indicators
-- **Account Memory & Timeline** - timeline of touchpoints, AI summaries, action items, and account drilldown
-- **AI-generated Playbooks and Drafts** - generated drafts and response workflows
-- **Ask Intelligence** - workspace for intelligence-oriented interactions
-- **Voice of Customer Reporting** - audio ticket and voice workflow support
-- **Settings**
-- **Add Team**
-- **Edit Details**
-- **Chat Copilot** - floating assistant with semantic session memory
-
----
-
 ## Screenshots / Demo Links
 
-Add these after you share the final links:
-
-- Landing page:
-- Login / Register:
-- Dashboard overview:
 - All Tickets:
+
+![All Tickets](client/public/All%20tickets.png)
+
 - Account Health:
+
+![Account Health Score](client/public/AccountHealthScore.png)
+
 - Account Memory:
+
+![Account Memory View 1](client/public/AccountMemoryView-1.png)
+![Account Memory View 2](client/public/AccountMemoryView-2.png)
+![Account Memory View 3](client/public/AccountMemoryView-3.png)
+![Account Memory View 4](client/public/AccountMemoryView-4.png)
+
 - Playbooks:
+
+![Playbooks View](client/public/PlaybookView.png)
+
 - Ask Intelligence:
+
+![Ask Intelligence](client/public/AskIntelligence.png)
+
 - Voice of Customer:
-- Settings:
-- Demo video:
+
+![Voice of Customer Reporting](client/public/VoiceView.png)
+
 
 ---
 
@@ -94,37 +91,37 @@ Zendesk / Ticket Payload
         v
 Express Backend (Node.js)
         |
-        ├─ Auth + Role Access
-        ├─ Ticket Ingestion
-        ├─ Signal Classification (Groq)
-        ├─ AI Draft Generation
-        ├─ Embedding Generation
-        ├─ Chat Retrieval + Memory
-        ├─ Graph / Health APIs
-        └─ Voice / Audio Endpoints
+        +-- Auth + Role Access
+        +-- Ticket Ingestion
+        +-- Signal Classification (Groq)
+        +-- AI Draft Generation
+        +-- Embedding Generation
+        +-- Chat Retrieval + Memory
+        +-- Graph / Health APIs
+        +-- Voice / Audio Endpoints
         |
         +--------------------+
         |                    |
         v                    v
    MySQL Database        Neo4j Graph
         |                    |
-        ├─ users             ├─ account / ticket / signal graph views
-        ├─ tickets           └─ graph-backed analytics endpoints
-        ├─ ticket_signals
-        ├─ ai_drafts
-        ├─ embeddings
-        ├─ chat_embeddings
-        └─ audio_tickets
+        +-- users            +-- account / ticket / signal graph views
+        +-- tickets          +-- graph-backed analytics endpoints
+        +-- ticket_signals
+        +-- ai_drafts
+        +-- embeddings
+        +-- chat_embeddings
+        +-- audio_tickets
         |
         v
 React + Vite Frontend
         |
-        ├─ Dashboard
-        ├─ Ticket Views
-        ├─ Health + Timeline Views
-        ├─ Graph Visualizations
-        ├─ Voice UI
-        └─ Chatbot Widget
+        +-- Dashboard
+        +-- Ticket Views
+        +-- Health + Timeline Views
+        +-- Graph Visualizations
+        +-- Voice UI
+        +-- Chatbot Widget
 ```
 
 ```mermaid
@@ -234,38 +231,6 @@ The platform supports root-user login and role-specific access accounts created 
 
 ---
 
-## Repository Structure
-
-```text
-Sales_Ticket/
-├─ client/
-│  ├─ public/
-│  ├─ src/
-│  │  ├─ components/
-│  │  │  ├─ Landing/
-│  │  │  ├─ LoginRegister/
-│  │  │  └─ dashboard/
-│  │  ├─ context/
-│  │  ├─ App.jsx
-│  │  └─ main.jsx
-│  ├─ package.json
-│  └─ vite.config.js
-├─ server/
-│  ├─ config/
-│  ├─ controllers/
-│  ├─ middlewares/
-│  ├─ models/
-│  ├─ routes/
-│  ├─ utils/
-│  ├─ req.http
-│  ├─ rag.http
-│  ├─ server.js
-│  └─ package.json
-└─ README.md
-```
-
----
-
 ## Getting Started
 
 ### Prerequisites
@@ -283,448 +248,154 @@ Optional depending on feature usage:
 
 ### Quick Start
 
-#### 1. Clone the repository
-
 ```bash
 git clone <your-repo-url>
 cd Sales_Ticket
-```
-
-#### 2. Install backend dependencies
-
-```bash
 cd server
 npm install
-```
-
-#### 3. Install frontend dependencies
-
-```bash
 cd ../client
 npm install
 ```
 
-#### 4. Create environment files
-
-Create `server/.env` and optionally `client/.env` using the examples below.
-
-#### 5. Start MySQL and Neo4j
-
-Make sure both services are running and accessible from the backend.
-
-#### 6. Start the backend
+Create `server/.env` and optionally `client/.env`, start MySQL and Neo4j, then run:
 
 ```bash
 cd server
 node server.js
 ```
-
-For auto-reload:
-
-```bash
-cd server
-npx nodemon server.js
-```
-
-#### 7. Start the frontend
 
 ```bash
 cd client
 npm run dev
 ```
 
-#### 8. Open the app
-
-Frontend:
-
-- `http://localhost:5173`
-
-Backend:
-
-- `http://localhost:5000`
+- Frontend: `http://localhost:5173`
+- Backend: `http://localhost:5000`
 
 ---
 
-## Environment Configuration
+## Environment And Service Setup
 
-### Backend `.env`
+Use this section for frontend, backend, and database setup together.
 
-Create `server/.env`:
+### Backend `server/.env`
 
 ```env
 PORT=5000
-
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=your_mysql_user
 DB_PASSWORD=your_mysql_password
 DB_NAME=sales_ticket
 DB_SSL=false
-
 NEO4J_URI=bolt://localhost:7687
 NEO4J_USERNAME=neo4j
 NEO4J_PASSWORD=your_neo4j_password
-
 JWT_SECRET=replace_with_a_secure_secret
 GROQ_API_KEY=your_groq_api_key
-
 ZENDESK_EMAIL=your_agent_email
 ZENDESK_API_TOKEN=your_zendesk_api_token
 ```
 
-### Frontend `.env`
-
-Optional `client/.env`:
+### Frontend `client/.env`
 
 ```env
 VITE_API_URL=http://localhost:5000/api
 ```
 
-Notes:
+### Services
 
-- the client already defaults to `http://localhost:5000/api`
-- Zendesk credentials are required for Zendesk-integrated voice/audio flows
-- `DB_SSL=false` is useful for local development
-
----
-
-## Database And Service Setup
-
-### MySQL
-
-Create the database:
+| Service | Setup |
+| --- | --- |
+| Frontend | Install dependencies in `client/` and run `npm run dev` |
+| Backend | Install dependencies in `server/` and run `node server.js` or `npx nodemon server.js` |
+| MySQL | Create `sales_ticket` and ensure app tables match backend queries |
+| Neo4j | Set `NEO4J_URI`, `NEO4J_USERNAME`, and `NEO4J_PASSWORD` |
+| Groq | Set `GROQ_API_KEY` for signal classification, drafts, and chat |
+| Zendesk | Set `ZENDESK_EMAIL` and `ZENDESK_API_TOKEN` for Zendesk-linked flows |
 
 ```sql
 CREATE DATABASE sales_ticket;
-```
-
-The backend expects tables such as:
-
-- `users`
-- `access_accounts`
-- `zendesk_accounts`
-- `tickets`
-- `ticket_signals`
-- `ai_drafts`
-- `embeddings`
-- `chat_embeddings`
-- `audio_tickets`
-
-If you deploy this elsewhere, make sure the schema matches the queries in `server/controllers/` and `server/models/`.
-
-### Neo4j
-
-Configure:
-
-- `NEO4J_URI`
-- `NEO4J_USERNAME`
-- `NEO4J_PASSWORD`
-
-The backend tests Neo4j connectivity on startup in [server/server.js](server/server.js).
-
-### Groq
-
-Set:
-
-- `GROQ_API_KEY`
-
-Groq powers:
-
-- signal classification
-- AI draft generation
-- chat responses
-
-### Zendesk
-
-If you want voice/audio and Zendesk resource access to work, configure:
-
-- `ZENDESK_EMAIL`
-- `ZENDESK_API_TOKEN`
-
----
-
-## Running On Another Machine
-
-To set this project up in any new environment:
-
-1. Clone the repository.
-2. Install Node.js, npm, MySQL, and Neo4j.
-3. Create `server/.env`.
-4. Create `client/.env` if you need a custom API base.
-5. Install backend dependencies in `server/`.
-6. Install frontend dependencies in `client/`.
-7. Start MySQL.
-8. Start Neo4j.
-9. Start the backend.
-10. Start the frontend.
-11. Verify auth, ticket routes, and chat routes.
-12. If using webhooks, point the external sender to the new backend URL.
-
----
-
-## Available Scripts
-
-### Client
-
-From `client/`:
-
-```bash
-npm run dev
-npm run build
-npm run preview
-npm run lint
-```
-
-### Server
-
-From `server/`:
-
-```bash
-node server.js
-npx nodemon server.js
 ```
 
 ---
 
 ## API Overview
 
-### Auth / Users
-
 | Method | Path | Description |
 | --- | --- | --- |
-| POST | `/api/users/register` | Register root user |
-| POST | `/api/users/login` | Root login |
-| POST | `/api/users/create-role` | Create role access account |
-| POST | `/api/users/role-login` | Login with role passkey |
-| GET | `/api/users/zendesk-context` | Initialize Zendesk context |
-
-### Tickets / Signals / Drafts
-
-| Method | Path | Description |
-| --- | --- | --- |
-| POST | `/api/tickets` | Ingest ticket payload |
+| POST | `/api/users/register` | Register the root user |
+| POST | `/api/users/login` | Root user login |
+| POST | `/api/users/create-role` | Create a role-based access account |
+| POST | `/api/users/role-login` | Login with a role passkey |
+| GET | `/api/users/zendesk-context` | Load Zendesk-linked context |
+| POST | `/api/tickets` | Ingest a Zendesk-style ticket payload |
 | GET | `/api/tickets/:userId` | Fetch tickets for a user |
 | POST | `/api/signals` | Fetch signals for a role |
 | POST | `/api/tickets/drafts` | Fetch AI drafts by role |
-| POST | `/api/tickets/drafts/update` | Update a draft |
-| POST | `/api/tickets/drafts/send` | Send draft reply |
-
-### Chat
-
-| Method | Path | Description |
-| --- | --- | --- |
-| POST | `/api/chat/session/start` | Start semantic chat session |
-| POST | `/api/chat` | Send chat message |
+| POST | `/api/tickets/drafts/update` | Update a saved draft |
+| POST | `/api/tickets/drafts/send` | Send a draft reply |
+| POST | `/api/chat/session/start` | Start a semantic chat session |
+| POST | `/api/chat` | Send a chat message and retrieve context |
 | POST | `/api/chat/clear` | Clear session or user chat history |
-
-### Memory / Graph / Voice
-
-| Area | Base Path |
-| --- | --- |
-| Memory | `/api/memory/*` |
-| Graph | `/api/graph/*` |
-| Audio tickets | `/api/audio-tickets/*` |
+| GET | `/api/memory/*` | Read account memory and timeline data |
+| GET | `/api/graph/*` | Read graph and health analytics |
+| GET | `/api/audio-tickets/*` | Read voice and audio ticket data |
 
 ---
 
-## Semantic Retrieval Design
+## Intelligence And Retrieval Flow
 
-The project uses two embedding stores:
+Sales Ticket processes tickets and chat in one compact pipeline:
 
-### `embeddings`
+1. ingest a Zendesk-style `ticket` payload or a chatbot `message`
+2. map `zendesk_account_id` to the internal `user_id` / `account_id` and store the core record in MySQL tables like `tickets`
+3. classify business signals with Groq and save them into `ticket_signals`
+4. generate AI drafts and store them in `ai_drafts`
+5. generate semantic vectors for ticket content and save them in `embeddings`
+6. store session-based chat turns in `chat_embeddings` using keys like `user_id`, `account_id`, and `session_id`
+7. retrieve matching rows from `embeddings` and `chat_embeddings` using cosine similarity over the generated `embedding`
+8. return context-aware outputs for chat, account memory, health views, and draft workflows
 
-Stores ticket-level semantic records used by chat and account intelligence.
-
-Typical fields:
-
-- `ticket_id`
-- `account_id`
-- `content`
-- `embedding`
-- `type`
-- `metadata`
-
-### `chat_embeddings`
-
-Stores session-scoped conversation turns for semantic memory.
-
-Typical fields:
-
-- `user_id`
-- `account_id`
-- `type`
-- `content`
-- `embedding`
-- `metadata`
-- `session_id`
-
-### Retrieval Flow
-
-1. user sends chat message
-2. backend generates query embedding
-3. backend fetches ticket embeddings for the account
-4. backend fetches conversation embeddings for the current session
-5. cosine similarity ranks relevant rows
-6. Groq replies using ticket context plus past conversation context
+The `embeddings` table powers ticket-level semantic retrieval for account intelligence, while `chat_embeddings` preserves session-scoped conversation memory for the assistant.
 
 ---
 
-## Ticket Intelligence Pipeline
+## System Notes And Testing
 
-The ticket flow in [server/controllers/ticketController.js](server/controllers/ticketController.js) works like this:
+- **Frontend** - A React dashboard that manages authentication, role-aware navigation, ticket and account views, graph and health visualizations, voice workflows, and the floating copilot experience.
+- **Backend** - An Express API layer that handles auth, ticket ingestion, signal classification, AI draft generation, semantic embeddings, chat retrieval, memory APIs, graph endpoints, and voice-related processing.
 
-1. accept incoming Zendesk-style ticket payload
-2. detect whether the ticket is text or voice-related
-3. map `zendesk_account_id` to an internal user
-4. save or update the ticket
-5. classify ticket signals with Groq
-6. save signals into `ticket_signals`
-7. generate AI drafts and save to `ai_drafts`
-8. generate ticket embeddings and save to `embeddings`
+Frontend components shown in the dashboard:
 
----
+- **All tickets** - [client/src/components/dashboard/views/AllTickets.jsx](client/src/components/dashboard/views/AllTickets.jsx)
+- **Account health score** - [client/src/components/dashboard/views/AccountHealthView.jsx](client/src/components/dashboard/views/AccountHealthView.jsx)
+- **Account memory and timeline** - [client/src/components/dashboard/views/AccountMemoryView.jsx](client/src/components/dashboard/views/AccountMemoryView.jsx)
+- **AI-generated playbooks and drafts** - [client/src/components/dashboard/views/PlaybooksView.jsx](client/src/components/dashboard/views/PlaybooksView.jsx)
+- **The ask intelligence layer** - [client/src/components/dashboard/views/AskIntelView.jsx](client/src/components/dashboard/views/AskIntelView.jsx)
+- **Voice of customer reporting** - [client/src/components/dashboard/views/VoiceView.jsx](client/src/components/dashboard/views/VoiceView.jsx)
+- **Dashboard shell and navigation** - [client/src/components/dashboard/Dashboard.jsx](client/src/components/dashboard/Dashboard.jsx), [client/src/components/dashboard/Sidebar.jsx](client/src/components/dashboard/Sidebar.jsx), [client/src/components/dashboard/SidebarLinkGroup.jsx](client/src/components/dashboard/SidebarLinkGroup.jsx), [client/src/components/dashboard/navItems.js](client/src/components/dashboard/navItems.js)
+- **Shared auth and chatbot layer** - [client/src/context/AuthContext.jsx](client/src/context/AuthContext.jsx), [client/src/components/dashboard/ChatbotWidget.jsx](client/src/components/dashboard/ChatbotWidget.jsx)
 
-## Frontend Architecture
+Backend files used by those frontend components:
 
-The frontend is a React dashboard built around:
+- [server/server.js](server/server.js) - main API wiring for dashboard, ticket, draft, chat, memory, graph, and audio endpoints
+- [server/controllers/ticketController.js](server/controllers/ticketController.js) - used by All Tickets, Playbooks and Drafts, and Voice of Customer Reporting
+- [server/controllers/graphController.js](server/controllers/graphController.js) - used by Account Health Score and parts of Account Memory and Timeline
+- [server/controllers/memoryController.js](server/controllers/memoryController.js) - used by Account Memory and Timeline
+- [server/controllers/chatController.js](server/controllers/chatController.js) - used by The Ask Intelligence Layer and the floating chatbot
+- [server/controllers/userController.js](server/controllers/userController.js) - used by auth flows and Zendesk-linked user context
+- [server/controllers/emailController.js](server/controllers/emailController.js) - supports outbound draft and email-related flows
+- [server/utils/groqClassifier.js](server/utils/groqClassifier.js) - powers ticket signal classification used across intelligence views
+- [server/utils/embedding.js](server/utils/embedding.js) - powers semantic retrieval for chat and memory experiences
 
-- auth flows
-- a sidebar-driven dashboard shell
-- role-aware ticket and signal views
-- graph and chart-heavy visualizations
-- a floating semantic chatbot
-
-Important files:
-
-- [client/src/App.jsx](client/src/App.jsx)
-- [client/src/context/AuthContext.jsx](client/src/context/AuthContext.jsx)
-- [client/src/components/dashboard/Dashboard.jsx](client/src/components/dashboard/Dashboard.jsx)
-- [client/src/components/dashboard/Sidebar.jsx](client/src/components/dashboard/Sidebar.jsx)
-- [client/src/components/dashboard/ChatbotWidget.jsx](client/src/components/dashboard/ChatbotWidget.jsx)
-
-Major views:
-
-- [client/src/components/dashboard/views/AllTickets.jsx](client/src/components/dashboard/views/AllTickets.jsx)
-- [client/src/components/dashboard/views/AccountHealthView.jsx](client/src/components/dashboard/views/AccountHealthView.jsx)
-- [client/src/components/dashboard/views/AccountMemoryView.jsx](client/src/components/dashboard/views/AccountMemoryView.jsx)
-- [client/src/components/dashboard/views/PlaybooksView.jsx](client/src/components/dashboard/views/PlaybooksView.jsx)
-- [client/src/components/dashboard/views/VoiceView.jsx](client/src/components/dashboard/views/VoiceView.jsx)
-
----
-
-## Backend Architecture
-
-Important backend files:
-
-- [server/server.js](server/server.js) - app bootstrap and route wiring
-- [server/controllers/userController.js](server/controllers/userController.js) - auth, role login, Zendesk context
-- [server/controllers/ticketController.js](server/controllers/ticketController.js) - ticket ingest, signal storage, drafts, embeddings, audio flows
-- [server/controllers/chatController.js](server/controllers/chatController.js) - semantic chat, session memory, retrieval
-- [server/controllers/memoryController.js](server/controllers/memoryController.js) - account memory data
-- [server/controllers/graphController.js](server/controllers/graphController.js) - graph and health APIs
-- [server/utils/groqClassifier.js](server/utils/groqClassifier.js) - signal classification
-- [server/utils/aiDraftGenerator.js](server/utils/aiDraftGenerator.js) - AI draft generation
-- [server/utils/embedding.js](server/utils/embedding.js) - local embedding generation
-
----
-
-## Testing And Manual Request Files
-
-Useful included files:
+Manual API checks are included in:
 
 - [server/req.http](server/req.http)
 - [server/rag.http](server/rag.http)
 
-Use them to test:
-
-- registration and login
-- role creation and role login
-- ticket ingestion
-- signal fetching
-- chat session start
-- RAG chat behavior
+These cover auth, role login, ticket ingestion, signal fetching, draft flows, session start, and RAG chat behavior.
 
 ---
 
-## Deployment Notes
-
-This repo does not currently include a full production deployment configuration, but the expected production setup would typically involve:
-
-- frontend hosted as static assets or behind a Node/web server
-- backend hosted as a long-running Node process
-- MySQL and Neo4j as managed or self-hosted services
-- reverse proxy such as Nginx
-- HTTPS termination at the edge
-
-At minimum for deployment:
-
-1. provision MySQL
-2. provision Neo4j
-3. set environment variables on the server
-4. build and host the frontend
-5. run the backend with a process manager like PM2
-6. configure external webhook sources to point to the backend base URL
-
----
-
-## Troubleshooting
-
-### Backend starts but dashboard has no data
-
-Check:
-
-- MySQL connection values in `server/.env`
-- whether required tables exist
-- whether `zendesk_accounts` contains mappings for incoming ticket account IDs
-
-### Chat replies but ignores ticket context
-
-Check:
-
-- rows exist in `embeddings`
-- rows exist in `chat_embeddings`
-- embedding generation is not failing in backend logs
-
-### Voice routes fail
-
-Check:
-
-- Zendesk credentials
-- voice ticket payload shape
-- whether the audio URL returned by Zendesk is valid
-
-### Signal classification returns nothing
-
-Check:
-
-- `GROQ_API_KEY`
-- outbound internet access
-- ticket text has meaningful subject/description content
-
-### Neo4j features fail
-
-Check:
-
-- `NEO4J_URI`
-- `NEO4J_USERNAME`
-- `NEO4J_PASSWORD`
-- Neo4j server availability
-
----
-
-## Future README Additions
-
-Once you provide your page links, this README can be extended with:
-
-- screenshot galleries
-- hosted demo links
-- page-by-page walkthroughs
-- feature callouts with visuals
-- deployment diagrams
-- setup screenshots
-
----
-
-## License
-
-No license file is currently included in this repository. Add one if you want explicit distribution and usage terms.
+This project was built for the hackathon - **Mission: Schrodinger's Cat** conducted by **SRM University**.

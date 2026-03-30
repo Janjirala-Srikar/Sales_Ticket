@@ -29,7 +29,6 @@
 .voice-hero h1 {
   margin: 0;
   color: var(--text-primary);
-  font-family: 'Space Grotesk', sans-serif;
   font-size: clamp(28px, 3vw, 40px);
   line-height: 1.06;
 }
