@@ -147,7 +147,7 @@ const createTicket = async (req, res) => {
     // ✅ FALLBACK 1: Try to extract from description
     if (!audioUrl && ticket.description) {
       const descMatch = ticket.description.match(
-        /https:\/\/lumora\.zendesk\.com\/api\/v2\/channels\/voice\/calls\/[^\s\)\n]+/i
+        /https:\/\/[a-z0-9\-]+\.zendesk\.com\/api\/v2\/channels\/voice\/calls\/[^\s\)\n"]+/i
       );
       audioUrl = descMatch ? descMatch[0] : null;
       if (audioUrl) console.log("✅ Recording URL extracted from description");
@@ -156,7 +156,7 @@ const createTicket = async (req, res) => {
     // ✅ FALLBACK 2: Try to extract from latest_comment
     if (!audioUrl && ticket.latest_comment) {
       const commentMatch = ticket.latest_comment.match(
-        /https:\/\/lumora\.zendesk\.com\/api\/v2\/channels\/voice\/calls\/[^\s\)\n]+/i
+        /https:\/\/[a-z0-9\-]+\.zendesk\.com\/api\/v2\/channels\/voice\/calls\/[^\s\)\n"]+/i
       );
       audioUrl = commentMatch ? commentMatch[0] : null;
       if (audioUrl) console.log("✅ Recording URL extracted from latest_comment");
@@ -183,13 +183,41 @@ const createTicket = async (req, res) => {
       console.log("   zendesk_ticket_id :", zendeskTicketId);
       console.log("   audio_url         :", audioUrl || null);
       console.log("   subject           :", ticket.subject || "");
-      console.log("\n📦 FULL TICKET:\n", JSON.stringify(ticket, null, 2));
+
+      // ✅ Get user_id from accountId
+      const [rows] = await pool.execute(
+        "SELECT user_id FROM zendesk_accounts WHERE zendesk_account_id = ?",
+        [accountId]
+      );
+
+      const userId = rows.length ? rows[0].user_id : null;
+
+      // ✅ Store in audio_tickets table
+      if (audioUrl && userId) {
+        try {
+          await pool.execute(
+            `INSERT INTO audio_tickets 
+            (zendesk_ticket_id, user_id, company_name, audio_url)
+            VALUES (?, ?, ?, ?)`,
+            [
+              zendeskTicketId,
+              userId,
+              ticket.receiver_email || "unknown",
+              audioUrl,
+            ]
+          );
+          console.log("✅ Audio ticket stored successfully");
+        } catch (dbErr) {
+          console.error("❌ Failed to store audio ticket:", dbErr.message);
+        }
+      }
 
       return res.json({
-        message: "Voice mail received",
+        message: "Voice mail received and stored",
         type: "audio",
         zendesk_ticket_id: zendeskTicketId,
         audio_url: audioUrl || null,
+        stored: audioUrl && userId ? true : false,
       });
     }
 

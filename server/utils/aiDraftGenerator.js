@@ -3,6 +3,11 @@ const Groq = require("groq-sdk");
 
 // Initialize Groq at function call time, not at module load
 const getGroqClient = () => {
+  // ✅ Validate API key exists
+  if (!process.env.GROQ_API_KEY) {
+    throw new Error("GROQ_API_KEY not set in environment variables");
+  }
+  
   return new Groq({ 
     apiKey: process.env.GROQ_API_KEY 
   });
@@ -15,8 +20,20 @@ const generateDraftFromSignal = async (signal, ticketData) => {
   try {
     console.log("🤖 Generating AI draft for signal type:", type);
 
-    // ✅ Initialize Groq client at runtime
-    const groq = getGroqClient();
+    // ✅ Initialize Groq client at runtime with validation
+    let groq;
+    try {
+      groq = getGroqClient();
+    } catch (err) {
+      console.error("❌ Groq initialization failed:", err.message);
+      return generateFallbackDraft(type, summary, subject);
+    }
+
+    // ✅ Validate groq object
+    if (!groq || !groq.chat || !groq.chat.completions) {
+      console.error("❌ Groq client invalid structure");
+      return generateFallbackDraft(type, summary, subject);
+    }
 
     // ✅ Create context-aware prompt for Groq
     const prompt = `You are a professional customer success and sales specialist.
@@ -41,9 +58,9 @@ INSTRUCTIONS:
 CRITICAL: Do NOT use markdown, just plain text. Do NOT include "Dear Customer" or placeholders.
 Start directly with the message content.`;
 
-    // ✅ Call Groq API for email generation
-    const message = await groq.messages.create({
-      model: "mixtral-8x7b-32768",
+    // ✅ Call Groq API with correct method
+    const message = await groq.chat.completions.create({
+      model: "llama-3.3-70b-versatile",
       max_tokens: 500,
       messages: [
         {
@@ -53,8 +70,13 @@ Start directly with the message content.`;
       ],
     });
 
-    const generatedDraft =
-      message.content[0].type === "text" ? message.content[0].text : "";
+    // ✅ Validate response
+    if (!message || !message.choices || message.choices.length === 0) {
+      console.error("❌ Invalid Groq response structure");
+      return generateFallbackDraft(type, summary, subject);
+    }
+
+    const generatedDraft = message.choices[0].message.content || "";
 
     console.log("✅ AI Draft generated successfully");
     return generatedDraft.trim();
