@@ -16,7 +16,19 @@ const memoryRoutes = require("./routes/memory.Routes");
 const app = express();
 
 /* -------------------- MIDDLEWARE -------------------- */
-app.use(cors());
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || process.env.CLIENT_ORIGIN || "https://sales-ticket.vercel.app";
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      // Allow requests with no origin (e.g., server-to-server or same-origin)
+      if (!origin) return cb(null, true);
+      if (origin === FRONTEND_ORIGIN) return cb(null, true);
+      // You can add additional allowed origins here if needed
+      return cb(new Error('Not allowed by CORS'));
+    },
+    credentials: true,
+  })
+);
 
 app.use(express.urlencoded({ extended: true, limit: "50mb" }));
 
