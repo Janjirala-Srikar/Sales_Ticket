@@ -3,7 +3,7 @@ import * as d3 from "d3";
 import { Chart, registerables } from "chart.js";
 Chart.register(...registerables);
 
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:5000/api";
+const API_BASE = import.meta.env.VITE_API_URL || "https://sales-ticket-backend.vercel.app/api";
 const BASE = `${API_BASE}/memory`;
 const GRAPH_BASE = `${API_BASE}/graph`;
 

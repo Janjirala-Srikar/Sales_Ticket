@@ -4,7 +4,8 @@ import { Chart, registerables } from "chart.js";
 
 Chart.register(...registerables);
 
-const BASE = "http://localhost:5000/api/graph";
+const API_BASE = import.meta.env.VITE_API_URL || 'https://sales-ticket-backend.vercel.app/api';
+const BASE = `${API_BASE}/graph`;
 
 const SIGNAL_COLORS = {
   churn_risk: "var(--error-text)",

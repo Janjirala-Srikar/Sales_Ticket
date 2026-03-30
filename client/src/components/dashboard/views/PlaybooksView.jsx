@@ -4,7 +4,7 @@ import { LuFileText, LuFolderOpen, LuPencilLine, LuSend, LuSparkles } from 'reac
 import { useAuth } from '../../../context/AuthContext';
 import './PlaybooksView.css';
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://sales-ticket-backend.vercel.app/api';
 
 const filterOptions = [
   { key: 'all', label: 'All Drafts', Icon: LuFileText },
