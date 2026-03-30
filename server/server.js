@@ -70,28 +70,34 @@ app.post("/api/tickets/drafts/send", ticketController.sendDraft);
 /* -------------------- SERVER START -------------------- */
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, async () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+// Only start server locally, not on Vercel
+if (process.env.NODE_ENV !== "production") {
+  app.listen(PORT, async () => {
+    console.log(`🚀 Server running on port ${PORT}`);
 
-  /* -------- MYSQL CONNECTION -------- */
-  try {
-    const conn = await pool.getConnection();
-    console.log("✅ MySQL Database connected!");
-    conn.release();
-  } catch (err) {
-    console.error("❌ MySQL connection failed:", err.message);
-  }
+    /* -------- MYSQL CONNECTION -------- */
+    try {
+      const conn = await pool.getConnection();
+      console.log("✅ MySQL Database connected!");
+      conn.release();
+    } catch (err) {
+      console.error("❌ MySQL connection failed:", err.message);
+    }
 
-  /* -------- NEO4J CONNECTION -------- */
-  try {
-    const session = neo4jDriver.session();
-    await session.run("RETURN 1"); // simple test query
-    console.log("✅ Neo4j connected!");
-    await session.close();
-  } catch (err) {
-    console.error("❌ Neo4j connection failed:", err.message);
-  }
-});
+    /* -------- NEO4J CONNECTION -------- */
+    try {
+      const session = neo4jDriver.session();
+      await session.run("RETURN 1"); // simple test query
+      console.log("✅ Neo4j connected!");
+      await session.close();
+    } catch (err) {
+      console.error("❌ Neo4j connection failed:", err.message);
+    }
+  });
+}
+
+// Export the app for Vercel serverless functions
+module.exports = app;
 
 /* -------------------- CLEAN SHUTDOWN -------------------- */
 process.on("SIGINT", async () => {
