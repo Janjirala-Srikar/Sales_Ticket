@@ -96,8 +96,11 @@ if (process.env.NODE_ENV !== "production") {
   });
 }
 
-// Export the app for Vercel serverless functions
-module.exports = app;
+// Export a request handler for Vercel serverless functions and keep `app` accessible
+// Vercel invokes the exported function as (req, res). Exporting the handler
+// ensures the Express app receives the incoming request correctly.
+module.exports = (req, res) => app(req, res);
+module.exports.app = app;
 
 /* -------------------- CLEAN SHUTDOWN -------------------- */
 process.on("SIGINT", async () => {
