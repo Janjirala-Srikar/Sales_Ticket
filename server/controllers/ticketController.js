@@ -3,6 +3,7 @@ const pool = require("../config/database");
 const { classifyTicket } = require("../utils/groqClassifier");
 const { generateDraftFromSignal } = require("../utils/aiDraftGenerator");
 const { sendReplyToZendesk } = require("../utils/zendeskSender");
+const { generateEmbedding } = require("../utils/embedding"); // 👈 NEW IMPORT
 
 const LEGACY_ROLE_LABEL_MAP = {
   product_manager: "Product Manager",
@@ -109,8 +110,74 @@ function buildPlaybackUrl(req, userId, ticketId) {
   return `${req.protocol}://${req.get("host")}/api/audio-tickets/${userId}/${ticketId}/stream`;
 }
 
+// ==========================================
+// 🧠 HELPER: Store ticket embeddings for chat
+// Always stores at least one embedding row per ticket.
+// Uses structured JSON content so chat retrieval can parse it cleanly.
+// ==========================================
+async function storeTicketEmbeddings(accountId, zendeskTicketId, subject, description, signals, receiverEmail) {
+  const embeddingRows = signals?.length
+    ? signals
+    : [{ type: "ticket", summary: null, assigned_to: null }];
+
+  try {
+    await pool.execute(
+      `DELETE FROM embeddings WHERE ticket_id = ? AND account_id = ?`,
+      [zendeskTicketId, accountId]
+    );
+
+    console.log(`🧹 Cleared old embeddings for ticket ${zendeskTicketId}`);
+  } catch (err) {
+    console.error(`❌ Failed to clear old embeddings for ticket ${zendeskTicketId}:`, err.message);
+    throw err;
+  }
+
+  for (const [index, signal] of embeddingRows.entries()) {
+    const signalType = safeString(signal.type) || "ticket";
+    const payload = {
+      subject: subject || "",
+      description: description || "",
+      signal: signalType,
+      summary: safeString(signal.summary),
+      assigned_to: safeString(signal.assigned_to),
+      receiver_email: safeString(receiverEmail),
+    };
+
+    try {
+      const embedding = await generateEmbedding(payload);
+      if (!embedding) {
+        console.warn(`⚠️ Skipped embedding for ticket ${zendeskTicketId} at row ${index + 1}`);
+        continue;
+      }
+
+      await pool.execute(
+        `INSERT INTO embeddings
+        (ticket_id, account_id, content, embedding, type, metadata)
+        VALUES (?, ?, ?, ?, ?, ?)`,
+        [
+          zendeskTicketId,
+          accountId,
+          JSON.stringify(payload),
+          JSON.stringify(embedding),
+          signalType,
+          JSON.stringify({
+            signal: signalType,
+            assigned_to: safeString(signal.assigned_to),
+            receiver_email: safeString(receiverEmail),
+          }),
+        ]
+      );
+
+      console.log(`🧠 Stored embedding for ticket ${zendeskTicketId} (${signalType})`);
+    } catch (err) {
+      console.error(`❌ Embedding failed for ticket ${zendeskTicketId}:`, err.message);
+      throw err;
+    }
+  }
+}
+
 // ==============================
-// ✅ CREATE TICKET (FINAL FIXED)
+// ✅ CREATE TICKET
 // ==============================
 const createTicket = async (req, res) => {
   try {
@@ -144,7 +211,6 @@ const createTicket = async (req, res) => {
     // =========================
     let audioUrl = safeString(ticket.recording_url);
 
-    // ✅ FALLBACK 1: Try to extract from description
     if (!audioUrl && ticket.description) {
       const descMatch = ticket.description.match(
         /https:\/\/lumora\.zendesk\.com\/api\/v2\/channels\/voice\/calls\/[^\s\)\n]+/i
@@ -153,7 +219,6 @@ const createTicket = async (req, res) => {
       if (audioUrl) console.log("✅ Recording URL extracted from description");
     }
 
-    // ✅ FALLBACK 2: Try to extract from latest_comment
     if (!audioUrl && ticket.latest_comment) {
       const commentMatch = ticket.latest_comment.match(
         /https:\/\/lumora\.zendesk\.com\/api\/v2\/channels\/voice\/calls\/[^\s\)\n]+/i
@@ -208,10 +273,10 @@ const createTicket = async (req, res) => {
 
     const userId = rows[0].user_id;
 
-    const subject = safeString(ticket.subject) || "";
-    const description = safeString(ticket.description) || "";
+    const subject      = safeString(ticket.subject)           || "";
+    const description  = safeString(ticket.description)       || "";
     const receiverEmail = safeString(ticket.receiver_email);
-    const senderEmail = safeString(ticket.requester?.email);
+    const senderEmail  = safeString(ticket.requester?.email);
 
     // ✅ STORE NORMAL TICKET
     await pool.execute(
@@ -219,10 +284,10 @@ const createTicket = async (req, res) => {
       (zendesk_ticket_id, zendesk_account_id, user_id, subject, description, receiver_email, sender_email)
       VALUES (?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
-        subject = VALUES(subject),
-        description = VALUES(description),
+        subject        = VALUES(subject),
+        description    = VALUES(description),
         receiver_email = VALUES(receiver_email),
-        sender_email = VALUES(sender_email)`,
+        sender_email   = VALUES(sender_email)`,
       [
         zendeskTicketId,
         accountId,
@@ -243,8 +308,8 @@ const createTicket = async (req, res) => {
       await Promise.all(
         signals.map(async (signal) => {
           try {
-            const safeHeadline = safeString(signal.headline) || "";
-            const safeSummary = safeString(signal.summary) || "";
+            const safeHeadline   = safeString(signal.headline)    || "";
+            const safeSummary    = safeString(signal.summary)     || "";
             const safeAssignedTo = safeString(signal.assigned_to);
 
             // STORE SIGNAL
@@ -253,8 +318,8 @@ const createTicket = async (req, res) => {
               (zendesk_ticket_id, user_id, signal_type, headline, summary, assigned_to, receiver_email)
               VALUES (?, ?, ?, ?, ?, ?, ?)
               ON DUPLICATE KEY UPDATE
-                headline = VALUES(headline),
-                summary = VALUES(summary),
+                headline    = VALUES(headline),
+                summary     = VALUES(summary),
                 assigned_to = VALUES(assigned_to),
                 receiver_email = VALUES(receiver_email)`,
               [
@@ -281,7 +346,7 @@ const createTicket = async (req, res) => {
               VALUES (?, ?, ?, ?, ?, 'generated')
               ON DUPLICATE KEY UPDATE
                 draft_content = VALUES(draft_content),
-                status = VALUES(status)`,
+                status        = VALUES(status)`,
               [
                 zendeskTicketId,
                 userId,
@@ -298,6 +363,18 @@ const createTicket = async (req, res) => {
         })
       );
     }
+
+    // =========================
+    // 🧠 STORE EMBEDDINGS — for chat semantic search
+    // =========================
+    await storeTicketEmbeddings(
+      accountId,
+      zendeskTicketId,
+      subject,
+      description,
+      signals,
+      receiverEmail
+    );
 
     res.json({
       message: "Text ticket processed successfully",
